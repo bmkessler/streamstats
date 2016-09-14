@@ -1,99 +1,120 @@
 package streamstats
 
 import (
+	"fmt"
 	"math"
 	"sync"
 )
 
-type OrderStats struct {
+type MomentStats struct {
 	sync.RWMutex
-	N  uint64
-	M1 float64
-	M2 float64
-	M3 float64
-	M4 float64
+	n  uint64
+	m1 float64
+	m2 float64
+	m3 float64
+	m4 float64
 }
 
-func (o *OrderStats) Push(x float64) {
-	o.Lock()
-	defer o.Unlock()
-	o.N++
-	fN := float64(o.N) // explicitly cast the number of observations to float64 for arithmetic operations
-	delta := x - o.M1
+func NewMomentStats() MomentStats {
+	return MomentStats{}
+}
+
+func (m *MomentStats) Push(x float64) {
+	m.Lock()
+	defer m.Unlock()
+	m.n++
+	fN := float64(m.n) // explicitly cast the number of observations to float64 for arithmetic operations
+	delta := x - m.m1
 	delta_n := delta / fN
 	delta_n2 := delta_n * delta_n
 	term1 := delta * delta_n * (fN - 1)
-	o.M1 += delta_n
-	o.M4 += term1*delta_n2*(fN*fN-3*o.N+3) + 6*delta_n2*o.M2 - 4*delta_n*o.M3
-	o.M3 += term1*delta_n*(fN-2) - 3*delta_n*o.M2
-	o.M2 += term1
+	m.m1 += delta_n
+	m.m4 += term1*delta_n2*(fN*fN-3*m.n+3) + 6*delta_n2*m.m2 - 4*delta_n*m.m3
+	m.m3 += term1*delta_n*(fN-2) - 3*delta_n*m.m2
+	m.m2 += term1
 }
 
-func (o *OrderStats) N() uint64 {
-	o.RLock()
-	defer o.RUnlock()
-	return o.N
+func (m *MomentStats) N() uint64 {
+	m.RLock()
+	defer m.RUnlock()
+	return m.n
 }
 
-func (o *OrderStats) Mean() float64 {
-	o.RLock()
-	defer o.RUnlock()
-	return o.M1
+func (m *MomentStats) Mean() float64 {
+	m.RLock()
+	defer m.RUnlock()
+	return m.m1
 }
 
-func (o *OrderStats) Variance() float64 {
-	o.RLock()
-	defer o.RUnlock()
-	return o.M2 / (float64(o.N) - 1.0)
+func (m *MomentStats) Variance() float64 {
+	m.RLock()
+	defer m.RUnlock()
+	if m.n > 1 {
+		return m.m2 / (float64(m.n) - 1.0)
+	} else {
+		return 0.0
+	}
 }
 
-func (o *OrderStats) StdDev() float64 {
-	o.RLock()
-	defer o.RUnlock()
-	return math.Sqrt(o.Variance())
+func (m *MomentStats) StdDev() float64 {
+	m.RLock()
+	defer m.RUnlock()
+	return math.Sqrt(m.Variance())
 }
 
-func (o *OrderStats) Skewness() float64 {
-	o.RLock()
-	defer o.RUnlock()
-	return math.Sqrt(float64(o.N)) * o.M3 / math.Pow(o.M2, 1.5)
+func (m *MomentStats) Skewness() float64 {
+	m.RLock()
+	defer m.RUnlock()
+	if m.m2 > 0.0 {
+		return math.Sqrt(float64(m.n)) * m.m3 / math.Pow(m.m2, 1.5)
+	} else {
+		return 0.0
+	}
 }
 
-func (o *OrderStats) Kurtosis() float64 {
-	o.RLock()
-	defer o.RUnlock()
-	return float64(o.N)*o.M4/(o.M2*o.M2) - 3.0
+func (m *MomentStats) Kurtosis() float64 {
+	m.RLock()
+	defer m.RUnlock()
+	if m.m2 > 0.0 {
+		return float64(m.n)*m.m4/(m.m2*m.m2) - 3.0
+	} else {
+		return 0.0
+	}
 }
 
-func (a *OrderStats) Combine(b *OrderStats) OrderStats {
-	var combined OrderStats
+func (a *MomentStats) Combine(b *MomentStats) MomentStats {
+	var combined MomentStats
 	a.RLock()
 	b.RLock()
 	defer a.RUnlock()
 	defer b.RUnlock()
 
-	combined.N = a.N + b.N
+	combined.n = a.n + b.n
 
-	a_N := float64(a.N) // convert to floats for arithmetic operations
-	b_N := float64(b.N)
-	c_N := float64(combined.N)
+	a_N := float64(a.n) // convert to floats for arithmetic operations
+	b_N := float64(b.n)
+	c_N := float64(combined.n)
 
-	delta := b.M1 - a.M1
+	delta := b.m1 - a.m1
 	delta2 := delta * delta
 	delta3 := delta * delta2
 	delta4 := delta2 * delta2
 
-	combined.M1 = (a_N*a.M1 + b_N*b.M1) / c_N
+	combined.m1 = (a_N*a.m1 + b_N*b.m1) / c_N
 
-	combined.M2 = a.M2 + b.M2 + delta2*a_N*b_N/c_N
+	combined.m2 = a.m2 + b.m2 + delta2*a_N*b_N/c_N
 
-	combined.M3 = a.M3 + b.M3 + delta3*a_N*b_N*(a_N-b_N)/(c_N*c_N)
-	combined.M3 += 3.0 * delta * (a_N*b.M2 - b_N*a.M2) / c_N
+	combined.m3 = a.m3 + b.m3 + delta3*a_N*b_N*(a_N-b_N)/(c_N*c_N)
+	combined.m3 += 3.0 * delta * (a_N*b.m2 - b_N*a.m2) / c_N
 
-	combined.M4 = a.M4 + b.M4 + delta4*a_N*b_N*(a_N*a_N-a_N*b_N+b_N*b_N)/(c_N*c_N*c_N)
-	combined.M4 += 6.0*delta2*(a_N*a_N*b.M2+b_N*b_N*a.M2)/(c_N*c_N) + 4.0*delta*(a_N*b.M3-b_N*a.M3)/c_N
+	combined.m4 = a.m4 + b.m4 + delta4*a_N*b_N*(a_N*a_N-a_N*b_N+b_N*b_N)/(c_N*c_N*c_N)
+	combined.m4 += 6.0*delta2*(a_N*a_N*b.m2+b_N*b_N*a.m2)/(c_N*c_N) + 4.0*delta*(a_N*b.m3-b_N*a.m3)/c_N
 
 	return combined
 }
 
-
+func (m *MomentStats) String() string {
+	m.RLock()
+	defer m.RUnlock()
+	return fmt.Sprintf("Mean: %f Variance: %f Skewness: %f Kurtosis: %f N: %d", m.Mean(), m.Variance(), m.Skewness(), m.Kurtosis(), m.N())
+}
