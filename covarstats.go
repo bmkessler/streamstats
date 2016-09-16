@@ -38,7 +38,7 @@ func (c *CovarStats) Correlation() float64 {
 	return c.sXY / (float64(c.xStats.n-1) * t)
 }
 
-func (c *CovarStats) N() {
+func (c *CovarStats) N() uint64 {
 	c.RLock()
 	defer c.RUnlock()
 	return c.xStats.N()
@@ -92,20 +92,20 @@ func (c *CovarStats) YKurtosis() float64 {
 	return c.yStats.Kurtosis()
 }
 
-func (a *CovarStats) Combine(b *CovarStats) CovarStats {
+func (c *CovarStats) Combine(b *CovarStats) CovarStats {
 	var combined CovarStats
 
-	a.RLock()
+	c.RLock()
 	b.RLock()
-	defer a.RUnlock()
+	defer c.RUnlock()
 	defer b.RUnlock()
 
-	combined.xStats = a.xStats.Combine(b.xStats)
-	combined.yStats = a.yStats.Combine(b.yStats)
+	combined.xStats = c.xStats.Combine(&b.xStats)
+	combined.yStats = c.yStats.Combine(&b.yStats)
 
-	deltaX := b.xStats.Mean() - a.xStats.Mean()
-	deltaY := b.yStats.Mean() - a.yStats.Mean()
-	combined.sXY = a.sXY + b.sXY + float64(a.xStats.n*b.xStats.n)*deltaX*deltaY/float64(combined.xStats.n)
+	deltaX := b.xStats.Mean() - c.xStats.Mean()
+	deltaY := b.yStats.Mean() - c.yStats.Mean()
+	combined.sXY = c.sXY + b.sXY + float64(c.xStats.n*b.xStats.n)*deltaX*deltaY/float64(combined.xStats.n)
 
 	return combined
 }

@@ -25,12 +25,12 @@ func (m *MomentStats) Push(x float64) {
 	m.n++
 	fN := float64(m.n) // explicitly cast the number of observations to float64 for arithmetic operations
 	delta := x - m.m1
-	delta_n := delta / fN
-	delta_n2 := delta_n * delta_n
-	term1 := delta * delta_n * (fN - 1)
-	m.m1 += delta_n
-	m.m4 += term1*delta_n2*(fN*fN-3*m.n+3) + 6*delta_n2*m.m2 - 4*delta_n*m.m3
-	m.m3 += term1*delta_n*(fN-2) - 3*delta_n*m.m2
+	deltaN := delta / fN
+	deltaN2 := deltaN * deltaN
+	term1 := delta * deltaN * (fN - 1)
+	m.m1 += deltaN
+	m.m4 += term1*deltaN2*(fN*fN-3*fN+3) + 6*deltaN2*m.m2 - 4*deltaN*m.m3
+	m.m3 += term1*deltaN*(fN-2) - 3*deltaN*m.m2
 	m.m2 += term1
 }
 
@@ -91,24 +91,24 @@ func (a *MomentStats) Combine(b *MomentStats) MomentStats {
 
 	combined.n = a.n + b.n
 
-	a_N := float64(a.n) // convert to floats for arithmetic operations
-	b_N := float64(b.n)
-	c_N := float64(combined.n)
+	aN := float64(a.n) // convert to floats for arithmetic operations
+	bN := float64(b.n)
+	cN := float64(combined.n)
 
 	delta := b.m1 - a.m1
 	delta2 := delta * delta
 	delta3 := delta * delta2
 	delta4 := delta2 * delta2
 
-	combined.m1 = (a_N*a.m1 + b_N*b.m1) / c_N
+	combined.m1 = (aN*a.m1 + bN*b.m1) / cN
 
-	combined.m2 = a.m2 + b.m2 + delta2*a_N*b_N/c_N
+	combined.m2 = a.m2 + b.m2 + delta2*aN*bN/cN
 
-	combined.m3 = a.m3 + b.m3 + delta3*a_N*b_N*(a_N-b_N)/(c_N*c_N)
-	combined.m3 += 3.0 * delta * (a_N*b.m2 - b_N*a.m2) / c_N
+	combined.m3 = a.m3 + b.m3 + delta3*aN*bN*(aN-bN)/(cN*cN)
+	combined.m3 += 3.0 * delta * (aN*b.m2 - bN*a.m2) / cN
 
-	combined.m4 = a.m4 + b.m4 + delta4*a_N*b_N*(a_N*a_N-a_N*b_N+b_N*b_N)/(c_N*c_N*c_N)
-	combined.m4 += 6.0*delta2*(a_N*a_N*b.m2+b_N*b_N*a.m2)/(c_N*c_N) + 4.0*delta*(a_N*b.m3-b_N*a.m3)/c_N
+	combined.m4 = a.m4 + b.m4 + delta4*aN*bN*(aN*aN-aN*bN+bN*bN)/(cN*cN*cN)
+	combined.m4 += 6.0*delta2*(aN*aN*b.m2+bN*bN*a.m2)/(cN*cN) + 4.0*delta*(aN*b.m3-bN*a.m3)/cN
 
 	return combined
 }
