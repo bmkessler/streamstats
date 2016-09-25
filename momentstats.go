@@ -6,6 +6,7 @@ import (
 	"sync"
 )
 
+// MomentStats is a datastructure for computing the first four moments of a stream
 type MomentStats struct {
 	sync.RWMutex
 	n  uint64
@@ -15,10 +16,12 @@ type MomentStats struct {
 	m4 float64
 }
 
+// NewMomentStats returns an empty MomentStats structure with no values
 func NewMomentStats() MomentStats {
 	return MomentStats{}
 }
 
+// Push updates the moment stats
 func (m *MomentStats) Push(x float64) {
 	m.Lock()
 	defer m.Unlock()
@@ -34,85 +37,90 @@ func (m *MomentStats) Push(x float64) {
 	m.m2 += term1
 }
 
+// N returns the observations stored so far
 func (m *MomentStats) N() uint64 {
 	m.RLock()
 	defer m.RUnlock()
 	return m.n
 }
 
+// Mean returns the mean of the observations seen so far
 func (m *MomentStats) Mean() float64 {
 	m.RLock()
 	defer m.RUnlock()
 	return m.m1
 }
 
+// Variance returns the variance of the observations seen so far
 func (m *MomentStats) Variance() float64 {
 	m.RLock()
 	defer m.RUnlock()
-	if m.n > 1 {
-		return m.m2 / (float64(m.n) - 1.0)
-	} else {
+	if m.n < 2 {
 		return 0.0
 	}
+	return m.m2 / (float64(m.n) - 1.0)
 }
 
+// StdDev returns the standard deviation of the samples seen so far
 func (m *MomentStats) StdDev() float64 {
 	m.RLock()
 	defer m.RUnlock()
 	return math.Sqrt(m.Variance())
 }
 
+// Skewness returns the skewness of the samples seen so far
 func (m *MomentStats) Skewness() float64 {
 	m.RLock()
 	defer m.RUnlock()
-	if m.m2 > 0.0 {
-		return math.Sqrt(float64(m.n)) * m.m3 / math.Pow(m.m2, 1.5)
-	} else {
+	if m.m2 <= 0.0 {
 		return 0.0
 	}
+	return math.Sqrt(float64(m.n)) * m.m3 / math.Pow(m.m2, 1.5)
 }
 
+// Kurtosis returns the excess kurtosis of the samples seen so far
 func (m *MomentStats) Kurtosis() float64 {
 	m.RLock()
 	defer m.RUnlock()
-	if m.m2 > 0.0 {
-		return float64(m.n)*m.m4/(m.m2*m.m2) - 3.0
-	} else {
+	if m.m2 <= 0.0 {
 		return 0.0
 	}
+	return float64(m.n)*m.m4/(m.m2*m.m2) - 3.0
 }
 
-func (a *MomentStats) Combine(b *MomentStats) MomentStats {
+// Combine combines the stats from two MomentStats structures
+func (m *MomentStats) Combine(b *MomentStats) MomentStats {
 	var combined MomentStats
-	a.RLock()
+	m.RLock()
 	b.RLock()
-	defer a.RUnlock()
+	defer m.RUnlock()
 	defer b.RUnlock()
 
-	combined.n = a.n + b.n
+	combined.n = m.n + b.n
 
-	aN := float64(a.n) // convert to floats for arithmetic operations
+	mN := float64(m.n) // convert to floats for arithmetic operations
 	bN := float64(b.n)
 	cN := float64(combined.n)
 
-	delta := b.m1 - a.m1
+	delta := b.m1 - m.m1
 	delta2 := delta * delta
 	delta3 := delta * delta2
 	delta4 := delta2 * delta2
 
-	combined.m1 = (aN*a.m1 + bN*b.m1) / cN
+	combined.m1 = (mN*m.m1 + bN*b.m1) / cN
 
-	combined.m2 = a.m2 + b.m2 + delta2*aN*bN/cN
+	combined.m2 = m.m2 + b.m2 + delta2*mN*bN/cN
 
-	combined.m3 = a.m3 + b.m3 + delta3*aN*bN*(aN-bN)/(cN*cN)
-	combined.m3 += 3.0 * delta * (aN*b.m2 - bN*a.m2) / cN
+	combined.m3 = m.m3 + b.m3 + delta3*mN*bN*(mN-bN)/(cN*cN)
+	combined.m3 += 3.0 * delta * (mN*b.m2 - bN*m.m2) / cN
 
-	combined.m4 = a.m4 + b.m4 + delta4*aN*bN*(aN*aN-aN*bN+bN*bN)/(cN*cN*cN)
-	combined.m4 += 6.0*delta2*(aN*aN*b.m2+bN*bN*a.m2)/(cN*cN) + 4.0*delta*(aN*b.m3-bN*a.m3)/cN
+	combined.m4 = m.m4 + b.m4 + delta4*mN*bN*(mN*mN-mN*bN+bN*bN)/(cN*cN*cN)
+	combined.m4 += 6.0*delta2*(mN*mN*b.m2+bN*bN*m.m2)/(cN*cN) + 4.0*delta*(mN*b.m3-bN*m.m3)/cN
 
 	return combined
 }
 
+// String returns the standard string representation of the samples seen so far
 func (m *MomentStats) String() string {
 	m.RLock()
 	defer m.RUnlock()

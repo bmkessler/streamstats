@@ -130,7 +130,7 @@ var expectedP2Stats = []expectedP2Stat{
 	},
 }
 
-func TestSmallN(t *testing.T) {
+func TestP2SmallN(t *testing.T) {
 	q := NewP2Quantile(0.5)
 	for _, e := range expectedP2Stats {
 		q.Push(e.x)
@@ -208,7 +208,7 @@ var dataPointsExpected = []expectedP2{
 	{n: [5]uint64{1, 6, 10, 16, 20}, np: [5]float64{1, 5.75, 10.5, 15.25, 20}, q: [5]float64{0.02, 0.50, 4.44, 17.22, 38.62}},
 }
 
-func TestDataPoints(t *testing.T) {
+func TestP2DataPoints(t *testing.T) {
 	q := NewP2Quantile(0.5)
 	for i, x := range dataPoints {
 		q.Push(x)
@@ -229,11 +229,7 @@ func TestDataPoints(t *testing.T) {
 	}
 }
 
-func gaussianRandomVariable(mean float64, stdev float64) float64 {
-	return mean + stdev*rand.NormFloat64()
-}
-
-func TestGaussianDist(t *testing.T) {
+func TestP2GaussianDist(t *testing.T) {
 	rand.Seed(42) // for deterministic testing
 	N := 100000
 	// mean/stdev pairs for testing
@@ -279,15 +275,7 @@ func TestGaussianDist(t *testing.T) {
 	}
 }
 
-func exponentialRandomVariable(lambda float64) float64 {
-	return rand.ExpFloat64() / lambda
-}
-
-func exponentialQuantile(p, lambda float64) float64 {
-	return -1.0 * math.Log(1-p) / lambda
-}
-
-func TestExponentialDist(t *testing.T) {
+func TestP2ExponentialDist(t *testing.T) {
 	rand.Seed(42) // for deterministic testing
 	N := 100000
 	eps := 0.03 // expect errors less than 3% for all quantiles
@@ -306,15 +294,7 @@ func TestExponentialDist(t *testing.T) {
 	}
 }
 
-func uniformRandomVariable(min, max float64) float64 {
-	return min + (max-min)*rand.Float64()
-}
-
-func uniformQuantile(p, min, max float64) float64 {
-	return min + (max-min)*p
-}
-
-func TestUniformDist(t *testing.T) {
+func TestP2UniformDist(t *testing.T) {
 	rand.Seed(42) // for deterministic testing
 	N := 100000
 	eps := 0.03 // expect errors less than 3% for all quantiles
