@@ -5,6 +5,8 @@ import (
 	"math/rand"
 )
 
+var result float64 // for benchmark results
+
 func gaussianRandomVariable(mean float64, stdev float64) float64 {
 	return mean + stdev*rand.NormFloat64()
 }

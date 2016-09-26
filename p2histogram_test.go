@@ -1,77 +1,43 @@
 package streamstats
 
-import (
-	"math"
-	"math/rand"
-	"testing"
-)
+import "testing"
 
-var initial50P2 = P2Quantile{
-	p:   0.5,
-	n:   [5]uint64{1, 2, 3, 4, 0},
-	np:  [5]float64{1, 2, 3, 4, 5},
-	dnp: [5]float64{0, 0.25, 0.5, 0.75, 1},
-	q:   [5]float64{0, 0, 0, 0, 0},
+var initialP2H4 = P2Histogram{
+	b: 4,
+	n: []uint64{1, 2, 3, 4, 0},
+	q: []float64{0, 0, 0, 0, 0},
 }
 
-var initial90P2 = P2Quantile{
-	p:   0.9,
-	n:   [5]uint64{1, 2, 3, 4, 0},
-	np:  [5]float64{1, 2.8, 4.6, 4.8, 5},
-	dnp: [5]float64{0, 0.45, 0.9, 0.95, 1},
-	q:   [5]float64{0, 0, 0, 0, 0},
+var initialP2H10 = P2Histogram{
+	b: 10,
+	n: []uint64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0},
+	q: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 }
 
-func TestNewP2Quantile(t *testing.T) {
-	// test median p=0.5
-	p := NewP2Quantile(0.5)
-	if p.p != initial50P2.p {
-		t.Errorf("Expected p to be %v, got %v", initial50P2.p, p.p)
+func TestNewP2Histogram(t *testing.T) {
+	// test 4 bins, same as median p=0.5 P2Histogram
+	h := NewP2Histogram(4)
+	t.Log(h)
+	if h.b != initialP2H4.b {
+		t.Errorf("Expected b to be %v, got %v", initialP2H4.b, h.b)
 	}
-	for j := 0; j < 5; j++ {
+	if len(h.n) != h.b+1 {
+		t.Errorf("Expected len(n)==%v, got len(n)=%v", h.b+1, len(h.n))
+	}
+	for j := 0; j < len(h.n); j++ {
 		// check n
-		if initial50P2.n[j] != p.n[j] {
-			t.Errorf("Expected n[%v]=%v, got n[%v]=%v", j, initial50P2.n[j], j, p.n[j])
-		}
-		// check np
-		if initial50P2.np[j] != p.np[j] {
-			t.Errorf("Expected np[%v]=%v, got np[%v]=%v", j, initial50P2.np[j], j, p.np[j])
-		}
-		// check dnp
-		if initial50P2.dnp[j] != p.dnp[j] {
-			t.Errorf("Expected dnp[%v]=%v, got dnp[%v]=%v", j, initial50P2.dnp[j], j, p.dnp[j])
+		if initialP2H4.n[j] != h.n[j] {
+			t.Errorf("Expected n[%v]=%v, got n[%v]=%v", j, initialP2H4.n[j], j, h.n[j])
 		}
 		// check q
-		if initial50P2.q[j] != p.q[j] {
-			t.Errorf("Expected q[%v]=%v, got q[%v]=%v", j, initial50P2.q[j], j, p.q[j])
+		if initialP2H4.q[j] != h.q[j] {
+			t.Errorf("Expected q[%v]=%v, got q[%v]=%v", j, initialP2H4.q[j], j, h.q[j])
 		}
 	}
 
-	// test high p=0.9
-	p = NewP2Quantile(0.9)
-	if p.p != initial90P2.p {
-		t.Errorf("Expected p to be %v, got %v", initial90P2.p, p.p)
-	}
-	for j := 0; j < 5; j++ {
-		// check n
-		if initial90P2.n[j] != p.n[j] {
-			t.Errorf("Expected n[%v]=%v, got n[%v]=%v", j, initial90P2.n[j], j, p.n[j])
-		}
-		// check np
-		if initial90P2.np[j] != p.np[j] {
-			t.Errorf("Expected np[%v]=%v, got np[%v]=%v", j, initial90P2.np[j], j, p.np[j])
-		}
-		// check dnp
-		if initial90P2.dnp[j] != p.dnp[j] {
-			t.Errorf("Expected dnp[%v]=%v, got dnp[%v]=%v", j, initial90P2.dnp[j], j, p.dnp[j])
-		}
-		// check q
-		if math.Abs(initial90P2.q[j]-p.q[j]) > 0.02 { // published table is only printed to 2 decimals and appears to use ceiling
-			t.Errorf("Expected q[%v]=%v, got q[%v]=%v", j, initial90P2.q[j], j, p.q[j])
-		}
-	}
 }
 
+/*
 type expectedP2Stat struct {
 	x   float64
 	q   float64
@@ -320,10 +286,4 @@ func TestP2UniformDist(t *testing.T) {
 	}
 }
 
-func BenchmarkP2QuantilePush(b *testing.B) {
-	q := NewP2Quantile(0.5)
-	for i := 0; i < b.N; i++ {
-		q.Push(float64(i))
-	}
-	result = q.Quantile() // to avoid optimizing out the loop entirely
-}
+*/

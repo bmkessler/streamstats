@@ -21,7 +21,7 @@ func TestGaussianMomentStats(t *testing.T) {
 		stdev := testCase[1]
 		skew := 0.0
 		kurt := 0.0
-		eps := 3.0 * stdev / math.Sqrt(float64(N)) // expected error rate <0.3%
+		eps := 3.0 * stdev / math.Sqrt(float64(N)) // expected error rate <0.3% in the mean
 		m := NewMomentStats()
 		for i := 0; i < N; i++ { // put in 10,000 random normal numbers
 			m.Push(gaussianRandomVariable(mean, stdev))
@@ -32,17 +32,25 @@ func TestGaussianMomentStats(t *testing.T) {
 		if math.Abs(m.Mean()-mean) > eps {
 			t.Errorf("Expected Mean == %v, got %v", mean, m.Mean())
 		}
-		if math.Abs(m.Variance()-stdev*stdev) > eps {
+		if math.Abs(m.Variance()-stdev*stdev) > stdev*eps {
 			t.Errorf("Expected Variance == %v, got %v", stdev*stdev, m.Variance())
 		}
 		if math.Abs(m.StdDev()-stdev) > eps {
 			t.Errorf("Expected StdDev == %v, got %v", stdev, m.StdDev())
 		}
-		if math.Abs(m.Skewness()-skew) > eps {
+		if math.Abs(m.Skewness()-skew) > 1.5*eps {
 			t.Errorf("Expected Skewness == %v, got %v", skew, m.Skewness())
 		}
-		if math.Abs(m.Kurtosis()-kurt) > eps {
+		if math.Abs(m.Kurtosis()-kurt) > 2*eps {
 			t.Errorf("Expected Kurtosis == %v, got %v", kurt, m.Kurtosis())
 		}
 	}
+}
+
+func BenchmarkMomentStatsPush(b *testing.B) {
+	m := NewMomentStats()
+	for i := 0; i < b.N; i++ {
+		m.Push(float64(i))
+	}
+	result = m.Mean() // to avoid optimizing out the loop entirely
 }
