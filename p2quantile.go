@@ -119,7 +119,7 @@ func (p *P2Quantile) N() uint64 {
 func (p *P2Quantile) Quantile() float64 {
 	p.RLock()
 	defer p.RUnlock()
-	if p.n[4] < 5 {
+	if p.n[4] < 5 && 0 < p.n[4] {
 		if p.n[4]%2 == 0 {
 			return (p.q[p.n[4]/2-1] + p.q[p.n[4]/2]) / 2 // average of values around median for even N
 		}
@@ -132,7 +132,7 @@ func (p *P2Quantile) Quantile() float64 {
 func (p *P2Quantile) UpperQuantile() float64 {
 	p.RLock()
 	defer p.RUnlock()
-	if p.n[4] < 5 {
+	if p.n[4] < 5 && 0 < p.n[4] {
 		return (p.Quantile() + p.Max()) / 2 // average the data if we don't have enough points yet
 	}
 	return p.q[3]
@@ -142,7 +142,7 @@ func (p *P2Quantile) UpperQuantile() float64 {
 func (p *P2Quantile) LowerQuantile() float64 {
 	p.RLock()
 	defer p.RUnlock()
-	if p.n[4] < 5 {
+	if p.n[4] < 5 && 0 < p.n[4] {
 		return (p.Min() + p.Quantile()) / 2 // average the data if we don't have enough points yet
 	}
 	return p.q[1]
@@ -152,7 +152,7 @@ func (p *P2Quantile) LowerQuantile() float64 {
 func (p *P2Quantile) Max() float64 {
 	p.RLock()
 	defer p.RUnlock()
-	if p.n[4] < 5 {
+	if p.n[4] < 5 && 0 < p.n[4] {
 		return p.q[p.n[4]-1] // the highest for small counts
 	}
 	return p.q[4]

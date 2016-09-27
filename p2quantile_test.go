@@ -46,6 +46,28 @@ func TestNewP2Quantile(t *testing.T) {
 			t.Errorf("Expected q[%v]=%v, got q[%v]=%v", j, initial50P2.q[j], j, p.q[j])
 		}
 	}
+	// check that all methods return 0.0
+	if p.P() != initial50P2.p {
+		t.Errorf("Expected P() to be %v, got %v", initial50P2.p, p.P())
+	}
+	if p.N() != 0.0 {
+		t.Errorf("Expected N() to be %v, got %v", 0.0, p.N())
+	}
+	if p.Quantile() != 0.0 {
+		t.Errorf("Expected Quantile() to be %v, got %v", 0.0, p.Quantile())
+	}
+	if p.Min() != 0.0 {
+		t.Errorf("Expected Min() to be %v, got %v", 0.0, p.Min())
+	}
+	if p.Max() != 0.0 {
+		t.Errorf("Expected Max() to be %v, got %v", 0.0, p.Max())
+	}
+	if p.UpperQuantile() != 0.0 {
+		t.Errorf("Expected UpperQuantile() to be %v, got %v", 0.0, p.UpperQuantile())
+	}
+	if p.LowerQuantile() != 0.0 {
+		t.Errorf("Expected LowerQuantile() to be %v, got %v", 0.0, p.LowerQuantile())
+	}
 
 	// test high p=0.9
 	p = NewP2Quantile(0.9)
@@ -320,10 +342,36 @@ func TestP2UniformDist(t *testing.T) {
 	}
 }
 
+func TestP2CauchyDist(t *testing.T) {
+	rand.Seed(42) // for deterministic testing
+	N := 100000
+	eps := 0.05 // expect errors less than 5% for all quantiles
+	x0Gammas := [][2]float64{
+		[2]float64{3.0, 0.1},
+		[2]float64{-10.0, 0.5},
+		[2]float64{-102.75, 2.5},
+		[2]float64{212.0, 1.0},
+	}
+	ps := []float64{0.10, 0.25, 0.50, 0.65, 0.95}
+	for _, x0Gamma := range x0Gammas {
+		x0 := x0Gamma[0]
+		gamma := x0Gamma[1]
+		for _, p := range ps {
+			q := NewP2Quantile(p)
+			for i := 0; i < N; i++ {
+				q.Push(cauchyRandomVariable(x0, gamma))
+			}
+			if math.Abs((cauchyQuantile(p, x0, gamma)-q.Quantile())/cauchyQuantile(p, x0, gamma)) > eps {
+				t.Errorf("P: %v, x0: %v, gamma: %v, Expected %v, got %v", p, x0, gamma, cauchyQuantile(p, x0, gamma), q.Quantile())
+			}
+		}
+	}
+}
+
 func BenchmarkP2QuantilePush(b *testing.B) {
 	q := NewP2Quantile(0.5)
 	for i := 0; i < b.N; i++ {
-		q.Push(float64(i))
+		q.Push(gaussianTestData[i%N])
 	}
 	result = q.Quantile() // to avoid optimizing out the loop entirely
 }

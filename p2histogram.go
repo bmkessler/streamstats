@@ -33,10 +33,10 @@ func (h *P2Histogram) Push(x float64) {
 	h.Lock()
 	defer h.Unlock()
 
-	if h.n[h.b+1] < uint64(h.b)+1 {
+	if h.n[h.b] < uint64(h.b)+1 {
 		// Initialization:
-		i := h.n[h.b+1] // the current count
-		h.q[i] = x      // add the new element on the end
+		i := h.n[h.b] // the current count
+		h.q[i] = x    // add the new element on the end
 		// insertion sort the elements
 		for i > 0 && h.q[i-1] > h.q[i] {
 			t := h.q[i-1]
@@ -44,14 +44,14 @@ func (h *P2Histogram) Push(x float64) {
 			h.q[i] = t
 			i--
 		}
-		h.n[h.b+1]++
+		h.n[h.b]++
 	} else {
 		// find which bin the new element lies in
 		var k uint64
 		if x < h.q[0] {
 			h.q[0] = x // new minimum
 			k = 0
-		} else if h.q[h.b+1] < x {
+		} else if h.q[h.b] < x {
 			h.q[h.b] = x // new maximum
 			k = uint64(h.b) - 2
 		} else { // check which bin the measurement falls into
@@ -63,7 +63,7 @@ func (h *P2Histogram) Push(x float64) {
 			}
 		}
 		// update the actual counts for the markers
-		for i := k + 1; i < uint64(h.b)+2; i++ {
+		for i := k + 1; i < uint64(h.b)+1; i++ {
 			h.n[i]++
 		}
 		// adjust heights of internal markers if neccesary
@@ -117,7 +117,7 @@ func (h *P2Histogram) Histogram() []CumulativeDensity {
 	defer h.RUnlock()
 	cdf := make([]CumulativeDensity, h.b+1, h.b+1)
 	fN := float64(h.N())
-	for i := 0; i <= h.b+1; i++ {
+	for i := 0; i < h.b+1; i++ {
 		cdf[i] = CumulativeDensity{X: h.q[i], P: float64(h.n[i]) / fN}
 	}
 	return cdf
@@ -134,5 +134,50 @@ func (h *P2Histogram) Min() float64 {
 func (h *P2Histogram) Max() float64 {
 	h.RLock()
 	defer h.RUnlock()
+	if h.n[h.b] < uint64(h.b)+1 && 0 < h.n[h.b] {
+		return h.q[h.n[h.b]-1]
+	}
 	return h.q[h.b]
+}
+
+// Quantile returns the linear approximation to the given quantile based on the histogram data
+func (h *P2Histogram) Quantile(p float64) float64 {
+	h.RLock()
+	defer h.RUnlock()
+	var q float64
+	if p <= 0.0 {
+		q = h.Min()
+	} else if 1.0 <= p {
+		q = h.Max()
+	}
+	N := uint64(h.b)
+	if h.n[h.b] < uint64(h.b)+1 && 0 < h.n[h.b] {
+		N = h.n[h.b] // there aren't enough values yet
+	}
+	fN := float64(h.N())
+	for i := uint64(0); i < N && float64(h.n[i])/fN < p; i++ {
+		q = h.q[i] + p*fN*(h.q[i+1]-h.q[i])/(float64(h.n[i+1])-float64(h.n[i]))
+	}
+	return q
+}
+
+// CDF returns the linear approximation to the CDF at x based on the histogram data
+func (h *P2Histogram) CDF(x float64) float64 {
+	h.RLock()
+	defer h.RUnlock()
+	var q float64
+	if x < h.Min() {
+		q = 0.0
+	} else if h.Max() <= x {
+		q = 1.0
+	}
+	N := uint64(h.b)
+	if h.n[h.b] < uint64(h.b)+1 && 0 < h.n[h.b] {
+		N = h.n[h.b] // there aren't enough values yet
+	}
+	fN := float64(h.N())
+	for i := uint64(0); i < N && h.q[i] < x; i++ {
+		q = float64(h.n[i])/fN + x*(float64(h.n[i+1])-float64(h.n[i]))/(fN*(h.q[i+1]-h.q[i]))
+	}
+	return q
 }

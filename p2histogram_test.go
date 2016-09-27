@@ -17,7 +17,6 @@ var initialP2H10 = P2Histogram{
 func TestNewP2Histogram(t *testing.T) {
 	// test 4 bins, same as median p=0.5 P2Histogram
 	h := NewP2Histogram(4)
-	t.Log(h)
 	if h.b != initialP2H4.b {
 		t.Errorf("Expected b to be %v, got %v", initialP2H4.b, h.b)
 	}
@@ -35,91 +34,46 @@ func TestNewP2Histogram(t *testing.T) {
 		}
 	}
 
+	// test 10 bins
+	h = NewP2Histogram(10)
+	if h.b != initialP2H10.b {
+		t.Errorf("Expected b to be %v, got %v", initialP2H10.b, h.b)
+	}
+	if len(h.n) != h.b+1 {
+		t.Errorf("Expected len(n)==%v, got len(n)=%v", h.b+1, len(h.n))
+	}
+	for j := 0; j < len(h.n); j++ {
+		// check n
+		if initialP2H10.n[j] != h.n[j] {
+			t.Errorf("Expected n[%v]=%v, got n[%v]=%v", j, initialP2H10.n[j], j, h.n[j])
+		}
+		// check q
+		if initialP2H10.q[j] != h.q[j] {
+			t.Errorf("Expected q[%v]=%v, got q[%v]=%v", j, initialP2H10.q[j], j, h.q[j])
+		}
+	}
+
 }
 
-/*
-type expectedP2Stat struct {
-	x   float64
-	q   float64
-	min float64
-	max float64
-	uq  float64
-	lq  float64
-	n   uint64
-}
+var histogramSmallNTestData = []float64{4, 6, 5, 7, 3, 1, 2}
+var histogramSmallNExpectedData = []float64{1, 2, 3, 4, 5, 6, 7}
 
-var expectedP2Stats = []expectedP2Stat{
-	expectedP2Stat{
-		x:   10.0,
-		q:   10.0,
-		min: 10.0,
-		max: 10.0,
-		uq:  10.0,
-		lq:  10.0,
-		n:   1,
-	},
-	expectedP2Stat{
-		x:   9.0,
-		q:   9.5,
-		min: 9.0,
-		max: 10.0,
-		uq:  9.75,
-		lq:  9.25,
-		n:   2,
-	},
-	expectedP2Stat{
-		x:   8.0,
-		q:   9.0,
-		min: 8.0,
-		max: 10.0,
-		uq:  9.5,
-		lq:  8.5,
-		n:   3,
-	},
-	expectedP2Stat{
-		x:   11.0,
-		q:   9.5,
-		min: 8.0,
-		max: 11.0,
-		uq:  10.25,
-		lq:  8.75,
-		n:   4,
-	},
-	expectedP2Stat{
-		x:   6.0,
-		q:   9.0,
-		min: 6.0,
-		max: 11.0,
-		uq:  10.0,
-		lq:  8.0,
-		n:   5,
-	},
-}
-
-func TestP2SmallN(t *testing.T) {
-	q := NewP2Quantile(0.5)
-	for _, e := range expectedP2Stats {
-		q.Push(e.x)
-		if q.Quantile() != e.q {
-			t.Errorf("Quantile Expected %v, got %v", e.q, q.Quantile())
+func TestP2HistorgramSmallN(t *testing.T) {
+	h := NewP2Histogram(len(histogramSmallNTestData) - 1)
+	for _, x := range histogramSmallNTestData {
+		h.Push(x)
+	}
+	for i, x := range histogramSmallNExpectedData {
+		if float64(h.n[i]) != x {
+			t.Errorf("Expected n[%v]=%v, got n[%v]=%v", i, x, i, h.n[i])
 		}
-		if q.Max() != e.max {
-			t.Errorf("Max Expected %v, got %v", e.max, q.Max())
-		}
-		if q.Min() != e.min {
-			t.Errorf("Min Expected %v, got %v", e.min, q.Min())
-		}
-		if q.UpperQuantile() != e.uq {
-			t.Errorf("UpperQuantile Expected %v, got %v", e.uq, q.UpperQuantile())
-		}
-		if q.LowerQuantile() != e.lq {
-			t.Errorf("LowerQuantile Expected %v, got %v", e.lq, q.LowerQuantile())
-		}
-		if q.N() != e.n {
-			t.Errorf("N Expected %v, got %v", e.n, q.N())
+		if h.q[i] != x {
+			t.Errorf("Expected q[%v]=%v, got q[%v]=%v", i, x, i, h.q[i])
 		}
 	}
 }
+
+/*
 
 // dataPoints is the test data from Table 1 in the paper
 var dataPoints = []float64{
@@ -287,3 +241,43 @@ func TestP2UniformDist(t *testing.T) {
 }
 
 */
+
+func BenchmarkP2Histogram8Push(b *testing.B) {
+	q := NewP2Histogram(8)
+	for i := 0; i < b.N; i++ {
+		q.Push(gaussianTestData[i%N])
+	}
+	result = q.Max() // to avoid optimizing out the loop entirely
+}
+
+func BenchmarkP2Histogram16Push(b *testing.B) {
+	q := NewP2Histogram(16)
+	for i := 0; i < b.N; i++ {
+		q.Push(gaussianTestData[i%N])
+	}
+	result = q.Max() // to avoid optimizing out the loop entirely
+}
+
+func BenchmarkP2Histogram32Push(b *testing.B) {
+	q := NewP2Histogram(32)
+	for i := 0; i < b.N; i++ {
+		q.Push(gaussianTestData[i%N])
+	}
+	result = q.Max() // to avoid optimizing out the loop entirely
+}
+
+func BenchmarkP2Histogram64Push(b *testing.B) {
+	q := NewP2Histogram(64)
+	for i := 0; i < b.N; i++ {
+		q.Push(gaussianTestData[i%N])
+	}
+	result = q.Max() // to avoid optimizing out the loop entirely
+}
+
+func BenchmarkP2Histogram128Push(b *testing.B) {
+	q := NewP2Histogram(128)
+	for i := 0; i < b.N; i++ {
+		q.Push(gaussianTestData[i%N])
+	}
+	result = q.Max() // to avoid optimizing out the loop entirely
+}

@@ -50,7 +50,7 @@ func TestGaussianMomentStats(t *testing.T) {
 func BenchmarkMomentStatsPush(b *testing.B) {
 	m := NewMomentStats()
 	for i := 0; i < b.N; i++ {
-		m.Push(float64(i))
+		m.Push(gaussianTestData[i%N])
 	}
 	result = m.Mean() // to avoid optimizing out the loop entirely
 }
