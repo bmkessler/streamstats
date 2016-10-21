@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 	"testing"
+	"time"
 )
 
 var initial50P2 = P2Quantile{
@@ -370,6 +371,37 @@ func TestP2CauchyDist(t *testing.T) {
 
 func BenchmarkP2QuantilePush(b *testing.B) {
 	q := NewP2Quantile(0.5)
+	for i := 0; i < b.N; i++ {
+		q.Push(gaussianTestData[i%N])
+	}
+	result = q.Quantile() // to avoid optimizing out the loop entirely
+}
+
+func BenchmarkP2QuantilePushReadContention(b *testing.B) {
+	q := NewP2Quantile(0.5)
+	contentionInterval := time.Nanosecond * 1 // interval to contend
+	go func() {
+		ticker := time.NewTicker(contentionInterval)
+		for _ = range ticker.C {
+			result = q.Quantile() // a contentious read
+		}
+	}()
+
+	for i := 0; i < b.N; i++ {
+		q.Push(gaussianTestData[i%N])
+	}
+	result = q.Quantile() // to avoid optimizing out the loop entirely
+}
+
+func BenchmarkP2QuantilePushWriteContention(b *testing.B) {
+	q := NewP2Quantile(0.5)
+	contentionInterval := time.Nanosecond * 1 // interval to contend
+	go func() {
+		ticker := time.NewTicker(contentionInterval)
+		for t := range ticker.C {
+			q.Push(gaussianTestData[t.Nanosecond()%N]) // a contentious write
+		}
+	}()
 	for i := 0; i < b.N; i++ {
 		q.Push(gaussianTestData[i%N])
 	}

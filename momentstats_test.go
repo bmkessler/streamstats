@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 	"testing"
+	"time"
 )
 
 func TestGaussianMomentStats(t *testing.T) {
@@ -49,6 +50,36 @@ func TestGaussianMomentStats(t *testing.T) {
 
 func BenchmarkMomentStatsPush(b *testing.B) {
 	m := NewMomentStats()
+	for i := 0; i < b.N; i++ {
+		m.Push(gaussianTestData[i%N])
+	}
+	result = m.Mean() // to avoid optimizing out the loop entirely
+}
+
+func BenchmarkMomentStatsPushReadContention(b *testing.B) {
+	m := NewMomentStats()
+	contentionInterval := time.Nanosecond * 1 // interval to contend
+	go func() {
+		ticker := time.NewTicker(contentionInterval)
+		for _ = range ticker.C {
+			result = m.Mean() // a contentious read
+		}
+	}()
+	for i := 0; i < b.N; i++ {
+		m.Push(gaussianTestData[i%N])
+	}
+	result = m.Mean() // to avoid optimizing out the loop entirely
+}
+
+func BenchmarkMomentStatsPushWriteContention(b *testing.B) {
+	m := NewMomentStats()
+	contentionInterval := time.Nanosecond * 1 // interval to contend
+	go func() {
+		ticker := time.NewTicker(contentionInterval)
+		for t := range ticker.C {
+			m.Push(gaussianTestData[t.Nanosecond()%N]) // a contentious write
+		}
+	}()
 	for i := 0; i < b.N; i++ {
 		m.Push(gaussianTestData[i%N])
 	}
