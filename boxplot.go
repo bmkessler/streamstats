@@ -44,3 +44,18 @@ func (bp BoxPlot) LowerWhisker() float64 {
 func (bp BoxPlot) IsOutlier(x float64) bool {
 	return x < bp.LowerWhisker() || x > bp.UpperWhisker()
 }
+
+// MidHinge returns the MidHinge of the data, average of upper and lower quantiles
+func (bp BoxPlot) MidHinge() float64 {
+	return (bp.UpperQuartile() + bp.LowerQuartile()) / 2.0
+}
+
+// MidRange returns the MidRange of the data, average of max and min
+func (bp BoxPlot) MidRange() float64 {
+	return (bp.Max() + bp.Min()) / 2.0
+}
+
+// TriMean returns the TriMean of the data, average of Median and MidHinge
+func (bp BoxPlot) TriMean() float64 {
+	return (bp.UpperQuartile() + 2.0*bp.Median() + bp.LowerQuartile()) / 4.0
+}
