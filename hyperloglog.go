@@ -127,10 +127,9 @@ func (hll *HyperLogLog) ReducePrecision(p byte) (*HyperLogLog, error) {
 		return nil, fmt.Errorf("Precision %d is greater than the current HyperLogLog precision %d", p, hll.p)
 	}
 	newHLL := NewHyperLogLog(p, hll.hash)
-	// TODO populate new hll by taking max over the stride length
-	m := (1 << hll.p)
+	// populate new hll by taking max over the stride length
 	newM := (1 << p)
-	strideLength := m - newM
+	strideLength := (1 << (hll.p - p))
 	for i := 0; i < newM; i++ {
 		for j := 0; j < strideLength; j++ {
 			if newHLL.data[i] < hll.data[i*strideLength+j] {

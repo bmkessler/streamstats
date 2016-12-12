@@ -11,15 +11,21 @@ import (
 const N = 10000
 
 var result float64
+var count uint64
 var gaussianTestData = [N]float64{}
 var exponentialTestData = [N]float64{}
 var uniformTestData = [N]float64{}
+var randomBytes = [N][]byte{}
 
 func TestMain(m *testing.M) {
+	rand.Seed(42)
 	for i := 0; i < N; i++ {
 		gaussianTestData[i] = gaussianRandomVariable(0, 1)
 		exponentialTestData[i] = exponentialRandomVariable(1)
 		uniformTestData[i] = uniformRandomVariable(0, 1)
+		b := make([]byte, 8)
+		rand.Read(b)
+		randomBytes[i] = b
 	}
 	os.Exit(m.Run())
 }
