@@ -59,11 +59,10 @@ func (hll *HyperLogLog) Add(item []byte) {
 	hll.hash.Reset()
 	hll.hash.Write(item)
 	hash := hll.hash.Sum64()
-	fmt.Printf("hash %b\n", hash)
 	bucket := hash >> (64 - hll.p) // top p bits are the bucket
 	trailingZeroCount := byte(1)   // the cardinality estimate based on number of zeros
 	for k := 1; int(hash&uint64(1)) != 1 && k <= int((64-hll.p)); k++ {
-		trailingZeroCount = byte(k)
+		trailingZeroCount = byte(k) + 1
 		hash = hash >> 1
 	}
 	// if the new estimate for the bucket is larger update it
@@ -84,7 +83,6 @@ func (hll *HyperLogLog) Distinct() uint64 {
 	}
 	rawEstimate := hll.alpha * float64(m) * float64(m) / sum
 	estimate := uint64(rawEstimate)
-	fmt.Printf("rawEstimate: %f\n", rawEstimate)
 	if rawEstimate < 5.0*float64(m)/2 {
 		zeroCount := 0
 		for _, d := range hll.data {
@@ -97,6 +95,16 @@ func (hll *HyperLogLog) Distinct() uint64 {
 		}
 	}
 	return estimate
+}
+
+// ExpectedError returns the estimated error in the number of distinct items in the multiset
+func (hll *HyperLogLog) ExpectedError() float64 {
+	hll.RLock()
+	defer hll.RUnlock()
+
+	m := uint64(1 << hll.p)
+	return 1.04 / math.Sqrt(float64(m))
+
 }
 
 // Reset zeros out the estimated number of distinct items in the multiset
