@@ -40,9 +40,9 @@ func (h Jenkins2_32) BlockSize() int {
 	return 12 // the hash operates on 12-byte blocks
 }
 
-// Sum returns 4-bytes of hash for bs (32-bit) without affecting the state
-func (h Jenkins2_32) Sum(bs []byte) []byte {
-	// copy the old struct to a new struct
+// Sum appends 4-bytes of hash to in without affecting the state
+func (h Jenkins2_32) Sum(in []byte) []byte {
+	// copy the old struct to a new struct to get the hash
 	// since the requirement is the function doesn't affect the underlying state
 	nj := Jenkins2_32{
 		key:      h.key,
@@ -52,18 +52,14 @@ func (h Jenkins2_32) Sum(bs []byte) []byte {
 		numBytes: h.numBytes,
 		buffer:   h.buffer,
 	}
-	nj.Write(bs)
 	nj.finalize()
-	var out []byte
-	for i := 0; i < 32; i += 8 {
-		out = append(out, byte(nj.c))
-	}
-	return out
+	return append(in, byte(nj.c>>24), byte(nj.c>>16), byte(nj.c>>8), byte(nj.c))
 }
 
 // Sum32 returns the hash as a 32-bit uint without affecting the state
 func (h Jenkins2_32) Sum32() uint32 {
 	// The expected semantics are unclear here, so not affecting the underlying state
+	// To allow appending more data to the hash
 	nj := Jenkins2_32{
 		key:      h.key,
 		a:        h.a,
