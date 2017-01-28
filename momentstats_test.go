@@ -11,10 +11,10 @@ func TestGaussianMomentStats(t *testing.T) {
 	N := 100000
 	// mean/stdev pairs for testing
 	testCases := [][2]float64{
-		[2]float64{0.0, 1.0},    // standard normal distribution
-		[2]float64{25.0, 1.0},   // shifted mean
-		[2]float64{0.0, 15.0},   // higher variance
-		[2]float64{-35.0, 12.5}, // shifted mean and higher variance
+		{0.0, 1.0},    // standard normal distribution
+		{25.0, 1.0},   // shifted mean
+		{0.0, 15.0},   // higher variance
+		{-35.0, 12.5}, // shifted mean and higher variance
 	}
 	for _, testCase := range testCases {
 		mean := testCase[0]

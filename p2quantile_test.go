@@ -105,7 +105,7 @@ type expectedP2Stat struct {
 }
 
 var expectedP2Stats = []expectedP2Stat{
-	expectedP2Stat{
+	{
 		x:   10.0,
 		q:   10.0,
 		min: 10.0,
@@ -114,7 +114,7 @@ var expectedP2Stats = []expectedP2Stat{
 		lq:  10.0,
 		n:   1,
 	},
-	expectedP2Stat{
+	{
 		x:   9.0,
 		q:   9.5,
 		min: 9.0,
@@ -123,7 +123,7 @@ var expectedP2Stats = []expectedP2Stat{
 		lq:  9.25,
 		n:   2,
 	},
-	expectedP2Stat{
+	{
 		x:   8.0,
 		q:   9.0,
 		min: 8.0,
@@ -132,7 +132,7 @@ var expectedP2Stats = []expectedP2Stat{
 		lq:  8.5,
 		n:   3,
 	},
-	expectedP2Stat{
+	{
 		x:   11.0,
 		q:   9.5,
 		min: 8.0,
@@ -141,7 +141,7 @@ var expectedP2Stats = []expectedP2Stat{
 		lq:  8.75,
 		n:   4,
 	},
-	expectedP2Stat{
+	{
 		x:   6.0,
 		q:   9.0,
 		min: 6.0,
@@ -256,10 +256,10 @@ func TestP2GaussianDist(t *testing.T) {
 	N := 100000
 	// mean/stdev pairs for testing
 	testCases := [][2]float64{
-		[2]float64{0.0, 1.0},    // standard normal distribution
-		[2]float64{25.0, 1.0},   // shifted mean
-		[2]float64{0.0, 15.0},   // higher variance
-		[2]float64{-35.0, 12.5}, // shifted mean and higher variance
+		{0.0, 1.0},    // standard normal distribution
+		{25.0, 1.0},   // shifted mean
+		{0.0, 15.0},   // higher variance
+		{-35.0, 12.5}, // shifted mean and higher variance
 	}
 	for _, testCase := range testCases {
 		mean := testCase[0]
@@ -321,10 +321,10 @@ func TestP2UniformDist(t *testing.T) {
 	N := 100000
 	eps := 0.03 // expect errors less than 3% for all quantiles
 	minMaxs := [][2]float64{
-		[2]float64{0.0, 1.0},
-		[2]float64{-10.0, 7.0},
-		[2]float64{3.0, 4.0},
-		[2]float64{210432.0, 921737123.0},
+		{0.0, 1.0},
+		{-10.0, 7.0},
+		{3.0, 4.0},
+		{210432.0, 921737123.0},
 	}
 	ps := []float64{0.10, 0.25, 0.50, 0.65, 0.95}
 	for _, minMax := range minMaxs {
@@ -347,10 +347,10 @@ func TestP2CauchyDist(t *testing.T) {
 	N := 100000
 	eps := 0.05 // expect errors less than 5% for all quantiles
 	x0Gammas := [][2]float64{
-		[2]float64{3.0, 0.1},
-		[2]float64{-10.0, 0.5},
-		[2]float64{-102.75, 2.5},
-		[2]float64{212.0, 1.0},
+		{3.0, 0.1},
+		{-10.0, 0.5},
+		{-102.75, 2.5},
+		{212.0, 1.0},
 	}
 	ps := []float64{0.10, 0.25, 0.50, 0.65, 0.95}
 	for _, x0Gamma := range x0Gammas {

@@ -65,7 +65,7 @@ func (p *P2Quantile) Push(x float64) {
 		for i := 0; i < 5; i++ {
 			p.np[i] += p.dnp[i]
 		}
-		// adjust heights of internal markers if neccesary
+		// adjust heights of internal markers if necessary
 		for i := 1; i < 4; i++ {
 			d := p.np[i] - float64(p.n[i]) // the difference from the target
 			if (d >= 1.0 && p.n[i]+1 < p.n[i+1]) || (d <= -1.0 && p.n[i-1]+1 < p.n[i]) {

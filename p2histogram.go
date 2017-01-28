@@ -61,7 +61,7 @@ func (h *P2Histogram) Push(x float64) {
 		for i := k + 1; i < uint64(h.b)+1; i++ {
 			h.n[i]++
 		}
-		// adjust heights of internal markers if neccesary
+		// adjust heights of internal markers if necessary
 		for i := 1; i < h.b; i++ {
 			np := 1.0 + float64(i)*(float64(h.n[i])-1.0)/float64(h.b)
 			d := np - float64(h.n[i]) // the difference from the target

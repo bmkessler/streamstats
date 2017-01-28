@@ -1,5 +1,5 @@
 # streamstats
-Streaming stats `O(1)` data structures and algorithms for golang
+Streaming stats data structures and algorithms that are `O(1)` in the number of elements for golang
 
 ## Moment-based Statistics
 Single variable moments up to fourth order and first-order covariance use the methods of:
@@ -11,7 +11,7 @@ which extend the results of B. P. Welford (1962).
 "Note on a method for calculating corrected sums of squares and products". Technometrics 4(3):419–420
 
 (popularized by Donald Knuth in "The Art of Computer Programming") 
-to arbitrary moments and combinations of arbitrary sized populations allowing parallel aggregation
+to arbitrary moments and combinations of arbitrary sized populations allowing parallel aggregation.
 
 ## Order Statistics
 
@@ -25,21 +25,27 @@ Commun. ACM 28, 10 (October 1985), 1076-1085.
 
 Stores a damped average with damping factor, 0 < *lambda* < 1, using update `m = (1-lambda)*m + lambda*x`
 
+## Count Distinct
+
+An implementation of the HyperLogLog data structure based on
+"Hyperloglog: The analysis of a near-optimal cardinality estimation algorithm"
+Philippe Flajolet and Éric Fusy and Olivier Gandouet and et al.
+in AOFA ’07: PROCEEDINGS OF THE 2007 INTERNATIONAL CONFERENCE ON ANALYSIS OF ALGORITHMS
+This implementation does not include any of the HyperLogLog++ enhancments except for the 64-bit hash function
+which eliminates the large cardinality correction for hash collisions
+this is also space in-efficient since bytes are used to store the counts which could be at most 60 < 2^6
 
 ## Benchmarks
 ```
-2.8 GHz Intel Core i7
-16 GB 1600 MHz DDR3
-go version go1.7.3 darwin/amd64
-BenchmarkMomentStatsPush-8                  	20000000	       106 ns/op
-BenchmarkMomentStatsPushReadContention-8    	20000000	       116 ns/op
-BenchmarkMomentStatsPushWriteContention-8   	10000000	       123 ns/op
-BenchmarkP2Histogram8Push-8                 	10000000	       153 ns/op
-BenchmarkP2Histogram16Push-8                	10000000	       216 ns/op
-BenchmarkP2Histogram32Push-8                	 5000000	       352 ns/op
-BenchmarkP2Histogram64Push-8                	 2000000	       629 ns/op
-BenchmarkP2Histogram128Push-8               	 1000000	      1184 ns/op
-BenchmarkP2QuantilePush-8                   	10000000	       145 ns/op
-BenchmarkP2QuantilePushReadContention-8     	10000000	       153 ns/op
-BenchmarkP2QuantilePushWriteContention-8    	10000000	       183 ns/op
+Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz
+go version go1.7.3 linux/amd64
+BenchmarkEWMAPush-4             	200000000	         8.27 ns/op
+BenchmarkHyperLogLogAdd-4       	30000000	        55.8 ns/op
+BenchmarkMomentStatsPush-4      	100000000	        19.7 ns/op
+BenchmarkP2Histogram8Push-4     	20000000	       110 ns/op
+BenchmarkP2Histogram16Push-4    	 5000000	       260 ns/op
+BenchmarkP2Histogram32Push-4    	 3000000	       522 ns/op
+BenchmarkP2Histogram64Push-4    	 1000000	      1097 ns/op
+BenchmarkP2Histogram128Push-4   	 1000000	      2162 ns/op
+BenchmarkP2QuantilePush-4       	20000000	        66.5 ns/op
 ```
