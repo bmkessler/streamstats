@@ -8,14 +8,20 @@ import (
 )
 
 // for benchmark results
-const N = 10000
+const (
+	b    = 14 // 14-bits for test data
+	N    = 1 << b
+	mask = N - 1
+)
 
 var result float64
+var count32 uint32
 var count uint64
 var gaussianTestData = [N]float64{}
 var exponentialTestData = [N]float64{}
 var uniformTestData = [N]float64{}
 var randomBytes = [N][]byte{}
+var longRandomBytes = [N][]byte{}
 
 func TestMain(m *testing.M) {
 	rand.Seed(42)
@@ -26,6 +32,9 @@ func TestMain(m *testing.M) {
 		b := make([]byte, 8)
 		rand.Read(b)
 		randomBytes[i] = b
+		d := make([]byte, 29)
+		rand.Read(d)
+		longRandomBytes[i] = d
 	}
 	os.Exit(m.Run())
 }

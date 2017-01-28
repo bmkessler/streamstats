@@ -3,14 +3,12 @@ package streamstats
 import (
 	"hash"
 	"math"
-	"sync"
 )
 
 import "fmt"
 
 // HyperLogLog a data structure for computing count distinct on arbitrary sized data
 type HyperLogLog struct {
-	sync.RWMutex
 	hash  hash.Hash64
 	alpha float64
 	p     byte
@@ -53,8 +51,6 @@ func NewHyperLogLog(p byte, hash hash.Hash64) *HyperLogLog {
 
 // Add adds an item to the multiset represented by the HyperLogLog
 func (hll *HyperLogLog) Add(item []byte) {
-	hll.Lock()
-	defer hll.Unlock()
 
 	hll.hash.Reset()
 	hll.hash.Write(item)
@@ -73,44 +69,74 @@ func (hll *HyperLogLog) Add(item []byte) {
 
 // Distinct returns the estimated number of distinct items in the multiset
 func (hll *HyperLogLog) Distinct() uint64 {
-	hll.RLock()
-	defer hll.RUnlock()
 
-	m := uint64(1 << hll.p)
-	var sum float64
+	m := float64(uint64(1 << hll.p))
+	var sum, zeroCount float64
 	for _, d := range hll.data {
 		sum += math.Pow(2.0, -1.0*float64(d))
-	}
-	rawEstimate := hll.alpha * float64(m) * float64(m) / sum
-	estimate := uint64(rawEstimate)
-	if rawEstimate < 5.0*float64(m)/2 {
-		zeroCount := 0
-		for _, d := range hll.data {
-			if d == 0 {
-				zeroCount++
-			}
+		if d == 0 {
+			zeroCount++
 		}
+	}
+	rawEstimate := hll.alpha * m * m / sum
+	estimate := uint64(rawEstimate)
+	if rawEstimate < 5.0*m/2.0 {
 		if zeroCount > 0 { // Use the linear counting estimate
-			estimate = uint64(float64(m) * math.Log(float64(m)/float64(zeroCount)))
+			estimate = uint64(m * math.Log(m/float64(zeroCount)))
 		}
 	}
 	return estimate
 }
 
+// LinearCounting returns the linear counting estimated number of distinct items in the multiset
+func (hll *HyperLogLog) LinearCounting() uint64 {
+
+	m := float64(uint64(1 << hll.p))
+	zeroCount := 0
+	for _, d := range hll.data {
+		if d == 0 {
+			zeroCount++
+		}
+	}
+	return uint64(m * math.Log(m/float64(zeroCount)))
+}
+
+// RawEstimate returns the raw estimated number of distinct items in the multiset
+func (hll *HyperLogLog) RawEstimate() uint64 {
+
+	m := float64(uint64(1 << hll.p))
+	var sum float64
+	for _, d := range hll.data {
+		sum += math.Pow(2.0, -1.0*float64(d))
+	}
+	return uint64(hll.alpha * m * m / sum)
+}
+
+// BiasCorrected returns the bias corrected estimated number of distinct items in the multiset
+func (hll *HyperLogLog) BiasCorrected() uint64 {
+
+	alpha := hll.alpha
+	m := float64(uint64(1 << hll.p))
+	C := alpha * m
+
+	var sum float64
+	for _, d := range hll.data {
+		sum += math.Pow(2.0, -1.0*float64(d))
+	}
+	rawEstimate := (alpha * m * m / sum)
+	return uint64(rawEstimate - C*math.Exp(-(rawEstimate-C)/C))
+}
+
 // ExpectedError returns the estimated error in the number of distinct items in the multiset
 func (hll *HyperLogLog) ExpectedError() float64 {
-	hll.RLock()
-	defer hll.RUnlock()
 
-	m := uint64(1 << hll.p)
-	return 1.04 / math.Sqrt(float64(m))
+	m := float64(uint64(1 << hll.p))
+	return 1.04 / math.Sqrt(m)
 
 }
 
 // Reset zeros out the estimated number of distinct items in the multiset
 func (hll *HyperLogLog) Reset() {
-	hll.Lock()
-	defer hll.Unlock()
 
 	for i := range hll.data {
 		hll.data[i] = 0
@@ -120,8 +146,6 @@ func (hll *HyperLogLog) Reset() {
 // ReducePrecision produces a new HyperLogLog with reduced precision
 // if p>hll.p it returns nil and an error, if p==hll.p it just produces a copy
 func (hll *HyperLogLog) ReducePrecision(p byte) (*HyperLogLog, error) {
-	hll.RLock()
-	defer hll.RUnlock()
 
 	if p > hll.p {
 		return nil, fmt.Errorf("Precision %d is greater than the current HyperLogLog precision %d", p, hll.p)
@@ -143,10 +167,6 @@ func (hll *HyperLogLog) ReducePrecision(p byte) (*HyperLogLog, error) {
 // Combine the estimate of two HyperLogLog reducing the precision to the minimum of the two sets
 // the function will return nil and an error if the hash functions mismatch
 func (hll *HyperLogLog) Combine(hllB *HyperLogLog) (*HyperLogLog, error) {
-	hll.RLock()
-	hllB.RLock()
-	defer hll.RUnlock()
-	defer hllB.RUnlock()
 
 	// check that both hash functions get the same result for "HyperLogLog"
 	hll.hash.Reset()

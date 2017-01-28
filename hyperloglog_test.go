@@ -90,7 +90,7 @@ func BenchmarkHyperLogLogAdd(b *testing.B) {
 	p := byte(10)
 	hll := NewHyperLogLog(p, fnv.New64())
 	for i := 0; i < b.N; i++ {
-		hll.Add(randomBytes[i%N])
+		hll.Add(randomBytes[i&mask])
 	}
 	count = hll.Distinct() // to avoid optimizing out the loop entirely
 }

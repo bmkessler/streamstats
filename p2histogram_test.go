@@ -245,7 +245,7 @@ func TestP2UniformDist(t *testing.T) {
 func BenchmarkP2Histogram8Push(b *testing.B) {
 	q := NewP2Histogram(8)
 	for i := 0; i < b.N; i++ {
-		q.Push(gaussianTestData[i%N])
+		q.Push(gaussianTestData[i&mask])
 	}
 	result = q.Max() // to avoid optimizing out the loop entirely
 }
@@ -253,7 +253,7 @@ func BenchmarkP2Histogram8Push(b *testing.B) {
 func BenchmarkP2Histogram16Push(b *testing.B) {
 	q := NewP2Histogram(16)
 	for i := 0; i < b.N; i++ {
-		q.Push(gaussianTestData[i%N])
+		q.Push(gaussianTestData[i&mask])
 	}
 	result = q.Max() // to avoid optimizing out the loop entirely
 }
@@ -261,7 +261,7 @@ func BenchmarkP2Histogram16Push(b *testing.B) {
 func BenchmarkP2Histogram32Push(b *testing.B) {
 	q := NewP2Histogram(32)
 	for i := 0; i < b.N; i++ {
-		q.Push(gaussianTestData[i%N])
+		q.Push(gaussianTestData[i&mask])
 	}
 	result = q.Max() // to avoid optimizing out the loop entirely
 }
@@ -269,7 +269,7 @@ func BenchmarkP2Histogram32Push(b *testing.B) {
 func BenchmarkP2Histogram64Push(b *testing.B) {
 	q := NewP2Histogram(64)
 	for i := 0; i < b.N; i++ {
-		q.Push(gaussianTestData[i%N])
+		q.Push(gaussianTestData[i&mask])
 	}
 	result = q.Max() // to avoid optimizing out the loop entirely
 }
@@ -277,7 +277,7 @@ func BenchmarkP2Histogram64Push(b *testing.B) {
 func BenchmarkP2Histogram128Push(b *testing.B) {
 	q := NewP2Histogram(128)
 	for i := 0; i < b.N; i++ {
-		q.Push(gaussianTestData[i%N])
+		q.Push(gaussianTestData[i&mask])
 	}
 	result = q.Max() // to avoid optimizing out the loop entirely
 }

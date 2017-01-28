@@ -3,12 +3,10 @@ package streamstats
 import (
 	"fmt"
 	"math"
-	"sync"
 )
 
 // MomentStats is a datastructure for computing the first four moments of a stream
 type MomentStats struct {
-	sync.RWMutex
 	n  uint64
 	m1 float64
 	m2 float64
@@ -23,8 +21,6 @@ func NewMomentStats() MomentStats {
 
 // Push updates the moment stats
 func (m *MomentStats) Push(x float64) {
-	m.Lock()
-	defer m.Unlock()
 	m.n++
 	fN := float64(m.n) // explicitly cast the number of observations to float64 for arithmetic operations
 	delta := x - m.m1
@@ -39,22 +35,16 @@ func (m *MomentStats) Push(x float64) {
 
 // N returns the observations stored so far
 func (m *MomentStats) N() uint64 {
-	m.RLock()
-	defer m.RUnlock()
 	return m.n
 }
 
 // Mean returns the mean of the observations seen so far
 func (m *MomentStats) Mean() float64 {
-	m.RLock()
-	defer m.RUnlock()
 	return m.m1
 }
 
 // Variance returns the variance of the observations seen so far
 func (m *MomentStats) Variance() float64 {
-	m.RLock()
-	defer m.RUnlock()
 	if m.n < 2 {
 		return 0.0
 	}
@@ -63,15 +53,11 @@ func (m *MomentStats) Variance() float64 {
 
 // StdDev returns the standard deviation of the samples seen so far
 func (m *MomentStats) StdDev() float64 {
-	m.RLock()
-	defer m.RUnlock()
 	return math.Sqrt(m.Variance())
 }
 
 // Skewness returns the skewness of the samples seen so far
 func (m *MomentStats) Skewness() float64 {
-	m.RLock()
-	defer m.RUnlock()
 	if m.m2 <= 0.0 {
 		return 0.0
 	}
@@ -80,8 +66,6 @@ func (m *MomentStats) Skewness() float64 {
 
 // Kurtosis returns the excess kurtosis of the samples seen so far
 func (m *MomentStats) Kurtosis() float64 {
-	m.RLock()
-	defer m.RUnlock()
 	if m.m2 <= 0.0 {
 		return 0.0
 	}
@@ -91,10 +75,6 @@ func (m *MomentStats) Kurtosis() float64 {
 // Combine combines the stats from two MomentStats structures
 func (m *MomentStats) Combine(b *MomentStats) MomentStats {
 	var combined MomentStats
-	m.RLock()
-	b.RLock()
-	defer m.RUnlock()
-	defer b.RUnlock()
 
 	combined.n = m.n + b.n
 
@@ -122,7 +102,5 @@ func (m *MomentStats) Combine(b *MomentStats) MomentStats {
 
 // String returns the standard string representation of the samples seen so far
 func (m *MomentStats) String() string {
-	m.RLock()
-	defer m.RUnlock()
 	return fmt.Sprintf("Mean: %f Variance: %f Skewness: %f Kurtosis: %f N: %d", m.Mean(), m.Variance(), m.Skewness(), m.Kurtosis(), m.N())
 }

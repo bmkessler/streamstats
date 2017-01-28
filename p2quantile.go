@@ -1,14 +1,11 @@
 package streamstats
 
-import "sync"
-
 // P2Quantile is a thread-safe, O(1) time and space data structure
 // for estimating the p-quantile of a series of N data points based on the
 // "The P2 Algorithm for Dynamic Computing Calculation of Quantiles and
 // Histograms Without Storing Observations" by RAJ JAIN and IIMRICH CHLAMTAC
 // Communications of the ACM Volume 28 Issue 10, Oct. 1985 Pages 1076-1085
 type P2Quantile struct {
-	sync.RWMutex
 	p   float64    // the p-quantile to be tracked
 	n   [5]uint64  // the actual counts for each marker
 	np  [5]float64 // the target counts for each marker
@@ -28,8 +25,6 @@ func NewP2Quantile(p float64) P2Quantile {
 
 // Push updates the data structure with a given x value
 func (p *P2Quantile) Push(x float64) {
-	p.Lock()
-	defer p.Unlock()
 
 	if p.n[4] < 5 {
 		// Initialization:
@@ -103,22 +98,16 @@ func (p *P2Quantile) Push(x float64) {
 
 // P returns the quantile being tracked
 func (p *P2Quantile) P() float64 {
-	p.RLock()
-	defer p.RUnlock()
 	return p.p
 }
 
 // N returns the number of observations seen so far
 func (p *P2Quantile) N() uint64 {
-	p.RLock()
-	defer p.RUnlock()
 	return p.n[4]
 }
 
 // Quantile returns the estimated value for the p-quantile
 func (p *P2Quantile) Quantile() float64 {
-	p.RLock()
-	defer p.RUnlock()
 	if p.n[4] < 5 && 0 < p.n[4] {
 		if p.n[4]%2 == 0 {
 			return (p.q[p.n[4]/2-1] + p.q[p.n[4]/2]) / 2 // average of values around median for even N
@@ -130,8 +119,6 @@ func (p *P2Quantile) Quantile() float64 {
 
 // UpperQuantile returns the estimate for the upper quantile, (1+p/2)
 func (p *P2Quantile) UpperQuantile() float64 {
-	p.RLock()
-	defer p.RUnlock()
 	if p.n[4] < 5 && 0 < p.n[4] {
 		return (p.Quantile() + p.Max()) / 2 // average the data if we don't have enough points yet
 	}
@@ -140,8 +127,6 @@ func (p *P2Quantile) UpperQuantile() float64 {
 
 // LowerQuantile returns the estimate for the lower quantile, p/2
 func (p *P2Quantile) LowerQuantile() float64 {
-	p.RLock()
-	defer p.RUnlock()
 	if p.n[4] < 5 && 0 < p.n[4] {
 		return (p.Min() + p.Quantile()) / 2 // average the data if we don't have enough points yet
 	}
@@ -150,8 +135,6 @@ func (p *P2Quantile) LowerQuantile() float64 {
 
 // Max returns the exact maximum value seen so far
 func (p *P2Quantile) Max() float64 {
-	p.RLock()
-	defer p.RUnlock()
 	if p.n[4] < 5 && 0 < p.n[4] {
 		return p.q[p.n[4]-1] // the highest for small counts
 	}
@@ -160,7 +143,5 @@ func (p *P2Quantile) Max() float64 {
 
 // Min returns the exact minimum value seen so far
 func (p *P2Quantile) Min() float64 {
-	p.RLock()
-	defer p.RUnlock()
 	return p.q[0]
 }

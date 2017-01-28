@@ -1,14 +1,11 @@
 package streamstats
 
-import "sync"
-
 // P2Histogram is a thread-safe, O(1) time and space data structure
 // for estimating the evenly spaced histogram bins of a series of N data points based on the
 // "The P2 Algorithm for Dynamic Computing Calculation of Quantiles and
 // Histograms Without Storing Observations" by RAJ JAIN and IIMRICH CHLAMTAC
 // Communications of the ACM Volume 28 Issue 10, Oct. 1985 Pages 1076-1085
 type P2Histogram struct {
-	sync.RWMutex
 	b int       // the number of bins to be tracked
 	n []uint64  // the actual counts for each marker
 	q []float64 // the value of each marker, i.e. the estimated quantile
@@ -30,8 +27,6 @@ func NewP2Histogram(b int) P2Histogram {
 
 // Push updates the data structure with a given x value
 func (h *P2Histogram) Push(x float64) {
-	h.Lock()
-	defer h.Unlock()
 
 	if h.n[h.b] < uint64(h.b)+1 {
 		// Initialization:
@@ -100,8 +95,7 @@ func (h *P2Histogram) Push(x float64) {
 
 // N returns the number of observations seen so far
 func (h *P2Histogram) N() uint64 {
-	h.RLock()
-	defer h.RUnlock()
+
 	return h.n[h.b+1]
 }
 
@@ -113,8 +107,7 @@ type CumulativeDensity struct {
 
 // Histogram returns the histogram of observations seen so far
 func (h *P2Histogram) Histogram() []CumulativeDensity {
-	h.RLock()
-	defer h.RUnlock()
+
 	cdf := make([]CumulativeDensity, h.b+1, h.b+1)
 	fN := float64(h.N())
 	for i := 0; i < h.b+1; i++ {
@@ -125,15 +118,13 @@ func (h *P2Histogram) Histogram() []CumulativeDensity {
 
 // Min returns the minimum of observations seen so far
 func (h *P2Histogram) Min() float64 {
-	h.RLock()
-	defer h.RUnlock()
+
 	return h.q[0]
 }
 
 // Max returns the maximum of observations seen so far
 func (h *P2Histogram) Max() float64 {
-	h.RLock()
-	defer h.RUnlock()
+
 	if h.n[h.b] < uint64(h.b)+1 && 0 < h.n[h.b] {
 		return h.q[h.n[h.b]-1]
 	}
@@ -142,8 +133,7 @@ func (h *P2Histogram) Max() float64 {
 
 // Quantile returns the linear approximation to the given quantile based on the histogram data
 func (h *P2Histogram) Quantile(p float64) float64 {
-	h.RLock()
-	defer h.RUnlock()
+
 	var q float64
 	if p <= 0.0 {
 		q = h.Min()
@@ -163,8 +153,7 @@ func (h *P2Histogram) Quantile(p float64) float64 {
 
 // CDF returns the linear approximation to the CDF at x based on the histogram data
 func (h *P2Histogram) CDF(x float64) float64 {
-	h.RLock()
-	defer h.RUnlock()
+
 	var q float64
 	if x < h.Min() {
 		q = 0.0
