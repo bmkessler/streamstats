@@ -75,7 +75,7 @@ func (hll *HyperLogLog) Distinct() uint64 {
 	C := alpha * m
 	var sum, zeroCount float64
 	for _, d := range hll.data {
-		sum += math.Pow(2.0, -1.0*float64(d))
+		sum += inversePowersOfTwo[int(d)]
 		if d == 0 {
 			zeroCount++
 		}
@@ -85,7 +85,7 @@ func (hll *HyperLogLog) Distinct() uint64 {
 	if t < 1.0 && zeroCount > 0 {
 		// Use the linear counting estimate at low values because it has less variance
 		rawEstimate = m * math.Log(m/float64(zeroCount))
-	} else if t < 6.0 {
+	} else if t < 12.0 {
 		// apply an empirical bias correction to intermediate values
 		rawEstimate = rawEstimate - C*(math.Exp(-t)+0.125*t*(t-0.82)*math.Exp(-1.85*t))
 	}
@@ -209,4 +209,72 @@ func (hll *HyperLogLog) Combine(hllB *HyperLogLog) (*HyperLogLog, error) {
 		}
 	}
 	return combinedHLL, nil
+}
+
+var inversePowersOfTwo = [...]float64{
+	math.Pow(2.0, 0.0),
+	math.Pow(2.0, -1.0),
+	math.Pow(2.0, -2.0),
+	math.Pow(2.0, -3.0),
+	math.Pow(2.0, -4.0),
+	math.Pow(2.0, -5.0),
+	math.Pow(2.0, -6.0),
+	math.Pow(2.0, -7.0),
+	math.Pow(2.0, -8.0),
+	math.Pow(2.0, -9.0),
+	math.Pow(2.0, -10.0),
+	math.Pow(2.0, -11.0),
+	math.Pow(2.0, -12.0),
+	math.Pow(2.0, -13.0),
+	math.Pow(2.0, -14.0),
+	math.Pow(2.0, -15.0),
+	math.Pow(2.0, -16.0),
+	math.Pow(2.0, -17.0),
+	math.Pow(2.0, -18.0),
+	math.Pow(2.0, -19.0),
+	math.Pow(2.0, -20.0),
+	math.Pow(2.0, -21.0),
+	math.Pow(2.0, -22.0),
+	math.Pow(2.0, -23.0),
+	math.Pow(2.0, -24.0),
+	math.Pow(2.0, -25.0),
+	math.Pow(2.0, -26.0),
+	math.Pow(2.0, -27.0),
+	math.Pow(2.0, -28.0),
+	math.Pow(2.0, -29.0),
+	math.Pow(2.0, -30.0),
+	math.Pow(2.0, -31.0),
+	math.Pow(2.0, -32.0),
+	math.Pow(2.0, -33.0),
+	math.Pow(2.0, -34.0),
+	math.Pow(2.0, -35.0),
+	math.Pow(2.0, -36.0),
+	math.Pow(2.0, -37.0),
+	math.Pow(2.0, -38.0),
+	math.Pow(2.0, -39.0),
+	math.Pow(2.0, -40.0),
+	math.Pow(2.0, -41.0),
+	math.Pow(2.0, -42.0),
+	math.Pow(2.0, -43.0),
+	math.Pow(2.0, -44.0),
+	math.Pow(2.0, -45.0),
+	math.Pow(2.0, -46.0),
+	math.Pow(2.0, -47.0),
+	math.Pow(2.0, -48.0),
+	math.Pow(2.0, -49.0),
+	math.Pow(2.0, -50.0),
+	math.Pow(2.0, -51.0),
+	math.Pow(2.0, -52.0),
+	math.Pow(2.0, -53.0),
+	math.Pow(2.0, -54.0),
+	math.Pow(2.0, -55.0),
+	math.Pow(2.0, -56.0),
+	math.Pow(2.0, -57.0),
+	math.Pow(2.0, -58.0),
+	math.Pow(2.0, -59.0),
+	math.Pow(2.0, -60.0),
+	math.Pow(2.0, -61.0),
+	math.Pow(2.0, -62.0),
+	math.Pow(2.0, -63.0),
+	math.Pow(2.0, -64.0),
 }
