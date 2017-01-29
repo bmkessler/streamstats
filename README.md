@@ -1,5 +1,5 @@
 # streamstats
-Streaming stats data structures and algorithms that are `O(1)` in the number of elements for golang
+Streaming stats data structures and algorithms in golang that are `O(1)` in the number of elements
 
 ## Moment-based Statistics
 Single variable moments up to fourth order and first-order covariance use the methods of:
@@ -39,13 +39,14 @@ this is also space in-efficient since bytes are used to store the counts which c
 ```
 Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz
 go version go1.7.3 linux/amd64
-BenchmarkEWMAPush-4             	200000000	         8.27 ns/op
-BenchmarkHyperLogLogAdd-4       	30000000	        55.8 ns/op
-BenchmarkMomentStatsPush-4      	100000000	        19.7 ns/op
-BenchmarkP2Histogram8Push-4     	20000000	       110 ns/op
-BenchmarkP2Histogram16Push-4    	 5000000	       260 ns/op
-BenchmarkP2Histogram32Push-4    	 3000000	       522 ns/op
-BenchmarkP2Histogram64Push-4    	 1000000	      1097 ns/op
-BenchmarkP2Histogram128Push-4   	 1000000	      2162 ns/op
-BenchmarkP2QuantilePush-4       	20000000	        66.5 ns/op
+BenchmarkEWMAPush-4                 	200000000	         8.27 ns/op
+BenchmarkHyperLogLogP10Add-4        	30000000	        56.0 ns/op
+BenchmarkHyperLogLogP10Distinct-4   	 1000000	      2168 ns/op
+BenchmarkMomentStatsPush-4          	100000000	        19.8 ns/op
+BenchmarkP2Histogram8Push-4         	20000000	       110 ns/op
+BenchmarkP2Histogram16Push-4        	 5000000	       257 ns/op
+BenchmarkP2Histogram32Push-4        	 3000000	       521 ns/op
+BenchmarkP2Histogram64Push-4        	 1000000	      1114 ns/op
+BenchmarkP2Histogram128Push-4       	 1000000	      2178 ns/op
+BenchmarkP2QuantilePush-4           	20000000	        70.3 ns/op
 ```
