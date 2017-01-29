@@ -70,7 +70,9 @@ func (hll *HyperLogLog) Add(item []byte) {
 // Distinct returns the estimated number of distinct items in the multiset
 func (hll *HyperLogLog) Distinct() uint64 {
 
+	alpha := hll.alpha
 	m := float64(uint64(1 << hll.p))
+	C := alpha * m
 	var sum, zeroCount float64
 	for _, d := range hll.data {
 		sum += math.Pow(2.0, -1.0*float64(d))
@@ -78,14 +80,16 @@ func (hll *HyperLogLog) Distinct() uint64 {
 			zeroCount++
 		}
 	}
-	rawEstimate := hll.alpha * m * m / sum
-	estimate := uint64(rawEstimate)
-	if rawEstimate < 5.0*m/2.0 {
-		if zeroCount > 0 { // Use the linear counting estimate
-			estimate = uint64(m * math.Log(m/float64(zeroCount)))
-		}
+	rawEstimate := alpha * m * m / sum
+	t := (rawEstimate - C) / C
+	if t < 1.0 && zeroCount > 0 {
+		// Use the linear counting estimate at low values because it has less variance
+		rawEstimate = m * math.Log(m/float64(zeroCount))
+	} else if t < 6.0 {
+		// apply an empirical bias correction to intermediate values
+		rawEstimate = rawEstimate - C*(math.Exp(-t)+0.125*t*(t-0.82)*math.Exp(-1.85*t))
 	}
-	return estimate
+	return uint64(rawEstimate)
 }
 
 // LinearCounting returns the linear counting estimated number of distinct items in the multiset
@@ -124,7 +128,8 @@ func (hll *HyperLogLog) BiasCorrected() uint64 {
 		sum += math.Pow(2.0, -1.0*float64(d))
 	}
 	rawEstimate := (alpha * m * m / sum)
-	return uint64(rawEstimate - C*math.Exp(-(rawEstimate-C)/C))
+	t := (rawEstimate - C) / C
+	return uint64(rawEstimate - C*(math.Exp(-t)+0.125*t*(t-0.82)*math.Exp(-1.85*t)))
 }
 
 // ExpectedError returns the estimated error in the number of distinct items in the multiset
