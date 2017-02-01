@@ -1,6 +1,8 @@
 # streamstats
 [![GoDoc](https://godoc.org/github.com/bmkessler/streamstats?status.svg)](https://godoc.org/github.com/bmkessler/streamstats)
-Streaming stats data structures and algorithms in golang that are `O(1)` in the number of elements
+[![Build Status](https://travis-ci.org/bmkessler/streamstats.svg?branch=master)](https://travis-ci.org/bmkessler/streamstats)
+
+Streaming stats data structures and algorithms in golang that are `O(1)` time and space in the number of elements processed.
 
 ## Moment-based Statistics
 Single variable moments up to fourth order and first-order covariance use the methods of:
@@ -29,7 +31,7 @@ Commun. ACM 28, 10 (October 1985), 1076-1085.
 
 ## Count Distinct
 
-An implementation of the HyperLogLog data structure based on:
+Count distinct is provided by an implementation of the HyperLogLog data structure based on:
 
 "Hyperloglog: The analysis of a near-optimal cardinality estimation algorithm"
 Philippe Flajolet and Éric Fusy and Olivier Gandouet and et al.
@@ -37,7 +39,7 @@ in AOFA ’07: PROCEEDINGS OF THE 2007 INTERNATIONAL CONFERENCE ON ANALYSIS OF A
 
 This implementation includes some of the HyperLogLog++ enhancements such as the 64-bit hash function
 which eliminates the large cardinality correction for hash collisions and an empirical bias correction for small cardinalities
-this is also space in-efficient since bytes are used to store the counts which could be at most 60 < 2^6
+The implementation is space in-efficient since bytes are used to store the counts which could be at most 60 < 2^6
 
 ## Benchmarks
 ```
