@@ -11,15 +11,18 @@ Single variable moments up to fourth order and first-order covariance use the me
 Philippe P. Pébay,
 Technical Report SAND2008-6212, Sandia National Laboratories, September 2008.
 
-which extend the results of B. P. Welford (1962).
-"Note on a method for calculating corrected sums of squares and products". Technometrics 4(3):419–420
+which extend the results of:
 
+"Note on a method for calculating corrected sums of squares and products". 
+ B. P. Welford (1962).
+ Technometrics 4(3):419–420
 (popularized by Donald Knuth in "The Art of Computer Programming") 
-to arbitrary moments and combinations of arbitrary sized populations allowing parallel aggregation.
 
+to arbitrary moments and combinations of arbitrary sized populations allowing parallel aggregation.
 These moments are also extended to two dependent variables with a covariance `Sxy`
 
-Also includes exponentially-weighted moving average with damping factor, 0 < *lambda* < 1, using update `m = (1-lambda)*m + lambda*x`
+This also an includes exponentially-weighted moving average with damping factor, 0 < *lambda* < 1, 
+using update formula `m = (1-lambda)*m + lambda*x`
 
 ## Order Statistics
 
