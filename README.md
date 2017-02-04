@@ -1,6 +1,7 @@
 # streamstats
 [![GoDoc](https://godoc.org/github.com/bmkessler/streamstats?status.svg)](https://godoc.org/github.com/bmkessler/streamstats)
 [![Build Status](https://travis-ci.org/bmkessler/streamstats.svg?branch=master)](https://travis-ci.org/bmkessler/streamstats)
+[![Coverage Status](https://coveralls.io/repos/github/bmkessler/streamstats/badge.svg?branch=coveralls)](https://coveralls.io/github/bmkessler/streamstats?branch=coveralls)
 
 Streaming stats data structures and algorithms in golang that are `O(1)` time and space in the number of elements processed.
 
