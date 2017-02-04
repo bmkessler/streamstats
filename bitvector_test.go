@@ -6,7 +6,7 @@ func TestNewBitVector(t *testing.T) {
 	var L uint64
 	for L = 1; L <= 1024; L++ {
 		bits := NewBitVector(L)
-		m := 1 + (L >> 6)
+		m := 1 + ((L - 1) >> 6)
 		if uint64(len(bits)) != m {
 			t.Errorf("Expected data to be length %d, got %d\n", m, len(bits))
 		}

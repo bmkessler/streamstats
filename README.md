@@ -42,20 +42,26 @@ in AOFA ’07: PROCEEDINGS OF THE 2007 INTERNATIONAL CONFERENCE ON ANALYSIS OF A
 
 This implementation includes some of the HyperLogLog++ enhancements such as the 64-bit hash function
 which eliminates the large cardinality correction for hash collisions and an empirical bias correction for small cardinalities
-The implementation is space in-efficient since bytes are used to store the counts which could be at most 60 < 2^6
+The implementation is space in-efficient since bits are used to store the counts which could be at most 60 < 2^6
+
+An additional LinearCounting implementation that is backed by a BitVector is available as well.  If the maximum possible 
+cardinality is known, this structure uses only 12.5% of the memory as the HyperLogLog and runs much faster for both `Add` and `Distinct`.
+However, the data structure saturates at the maximum value while HyperLogLog can count to virtually unlimited cardinalities.
 
 ## Benchmarks
 ```
 Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz
 go version go1.7.3 linux/amd64
-BenchmarkEWMAPush-4                 	200000000	         8.27 ns/op
-BenchmarkHyperLogLogP10Add-4        	30000000	        56.0 ns/op
-BenchmarkHyperLogLogP10Distinct-4   	 1000000	      2168 ns/op
-BenchmarkMomentStatsPush-4          	100000000	        19.8 ns/op
-BenchmarkP2Histogram8Push-4         	20000000	       110 ns/op
-BenchmarkP2Histogram16Push-4        	 5000000	       257 ns/op
-BenchmarkP2Histogram32Push-4        	 3000000	       521 ns/op
-BenchmarkP2Histogram64Push-4        	 1000000	      1114 ns/op
-BenchmarkP2Histogram128Push-4       	 1000000	      2178 ns/op
-BenchmarkP2QuantilePush-4           	20000000	        70.3 ns/op
+BenchmarkEWMAPush-4                    	200000000	         8.32 ns/op
+BenchmarkHyperLogLogP10Add-4           	30000000	        56.1 ns/op
+BenchmarkHyperLogLogP10Distinct-4      	 1000000	      2050 ns/op
+BenchmarkLinearCountingP10Add-4        	50000000	        35.4 ns/op
+BenchmarkLinearCountingP10Distinct-4   	10000000	       180 ns/op
+BenchmarkMomentStatsPush-4             	100000000	        19.7 ns/op
+BenchmarkP2Histogram8Push-4            	20000000	       109 ns/op
+BenchmarkP2Histogram16Push-4           	 5000000	       257 ns/op
+BenchmarkP2Histogram32Push-4           	 3000000	       521 ns/op
+BenchmarkP2Histogram64Push-4           	 1000000	      1108 ns/op
+BenchmarkP2Histogram128Push-4          	 1000000	      2167 ns/op
+BenchmarkP2QuantilePush-4              	20000000	        66.9 ns/op
 ```

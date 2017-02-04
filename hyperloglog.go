@@ -15,6 +15,11 @@ type HyperLogLog struct {
 	data  []byte
 }
 
+const (
+	minimumHyperLogLogP = 4
+	maximumHyperLogLogP = 16
+)
+
 // NewHyperLogLog returns a new HyperLogLog data structure with 2^p buckets based on
 // Hyperloglog: The analysis of a near-optimal cardinality estimation algorithm
 // Philippe Flajolet and Éric Fusy and Olivier Gandouet and et al.
@@ -24,10 +29,10 @@ type HyperLogLog struct {
 // this is also space in-efficient since bytes are used to store the counts which could be at most 60 < 2^6
 func NewHyperLogLog(p byte, hash hash.Hash64) *HyperLogLog {
 	// p is bounded by 4 and 16 for practical implementations
-	if p < 4 {
-		p = 4
-	} else if p > 16 {
-		p = 16
+	if p < minimumHyperLogLogP {
+		p = minimumHyperLogLogP
+	} else if p > maximumHyperLogLogP {
+		p = maximumHyperLogLogP
 	}
 	m := 1 << p
 	var alpha float64 // the normalization constant dependent on m
@@ -154,6 +159,8 @@ func (hll *HyperLogLog) ReducePrecision(p byte) (*HyperLogLog, error) {
 
 	if p > hll.p {
 		return nil, fmt.Errorf("Precision %d is greater than the current HyperLogLog precision %d", p, hll.p)
+	} else if p < 4 {
+		return nil, fmt.Errorf("Precision %d is less than the mimimum HyperLogLog precision %d", p, minimumHyperLogLogP)
 	}
 	newHLL := NewHyperLogLog(p, hll.hash)
 	// populate new hll by taking max over the stride length
@@ -276,5 +283,4 @@ var inversePowersOfTwo = [...]float64{
 	math.Pow(2.0, -61.0),
 	math.Pow(2.0, -62.0),
 	math.Pow(2.0, -63.0),
-	math.Pow(2.0, -64.0),
 }

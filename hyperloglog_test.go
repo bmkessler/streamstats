@@ -86,6 +86,36 @@ func TestHyperLogLogDistinctReducePrecision(t *testing.T) {
 	}
 }
 
+func TestHyperLogLogCombine(t *testing.T) {
+	// Expect to get exactly the same answer after combining
+	p := byte(12)
+	hllA := NewHyperLogLog(p, fnv.New64())
+	hllB := NewHyperLogLog(p, fnv.New64())
+	hllTotal := NewHyperLogLog(p, fnv.New64())
+
+	cardinality := uint64(500)
+	rand.Seed(42)
+	for i := uint64(0); i < cardinality; i++ {
+		b := make([]byte, 8)
+		rand.Read(b)
+		hllA.Add(b)     // count in A
+		hllTotal.Add(b) // count in Total
+	}
+	for i := uint64(0); i < cardinality; i++ {
+		b := make([]byte, 8)
+		rand.Read(b)
+		hllB.Add(b)     // count in B
+		hllTotal.Add(b) // count in Total
+	}
+	hllC, err := hllA.Combine(hllB) // A + B should equal total
+	if err != nil {
+		t.Error(err)
+	}
+	if hllC.Distinct() != hllTotal.Distinct() {
+		t.Errorf("Expected combined %d to equal total %d", hllC.Distinct(), hllTotal.Distinct())
+	}
+}
+
 func BenchmarkHyperLogLogP10Add(b *testing.B) {
 	p := byte(10)
 	hll := NewHyperLogLog(p, fnv.New64())
