@@ -9,7 +9,7 @@ type BitVector []uint64
 // NewBitVector returns a new BitVector of length L
 func NewBitVector(L uint64) BitVector {
 	// length of backing slice is # of 64-bit words, lower 6 bits index index inside the word
-	return BitVector(make([]uint64, 1+(L>>6), 1+(L>>6)))
+	return BitVector(make([]uint64, 1+((L-1)>>6), 1+((L-1)>>6)))
 }
 
 // Set sets the bit at position N
