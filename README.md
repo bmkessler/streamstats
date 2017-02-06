@@ -1,7 +1,7 @@
 # streamstats
 [![GoDoc](https://godoc.org/github.com/bmkessler/streamstats?status.svg)](https://godoc.org/github.com/bmkessler/streamstats)
 [![Build Status](https://travis-ci.org/bmkessler/streamstats.svg?branch=master)](https://travis-ci.org/bmkessler/streamstats)
-[![Coverage Status](https://coveralls.io/repos/github/bmkessler/streamstats/badge.svg?branch=coveralls)](https://coveralls.io/github/bmkessler/streamstats?branch=coveralls)
+[![Coverage Status](https://coveralls.io/repos/github/bmkessler/streamstats/badge.svg?branch=master)](https://coveralls.io/github/bmkessler/streamstats?branch=master)
 
 Streaming stats data structures and algorithms in golang that are `O(1)` time and space in the number of elements processed.
 
@@ -48,6 +48,19 @@ The implementation is space in-efficient since bits are used to store the counts
 An additional LinearCounting implementation that is backed by a BitVector is available as well.  If the maximum possible 
 cardinality is known, this structure uses only 12.5% of the memory as the HyperLogLog and runs much faster for both `Add` and `Distinct`.
 However, the data structure saturates at the maximum value while HyperLogLog can count to virtually unlimited cardinalities.
+
+## Set Membership
+
+Approximate set membership is provided by a BloomFilter implementation based on:
+
+"Space/time trade-offs in hash coding with allowable errors"
+Burton H. Bloom
+Communications of the ACM CACM Homepage archive
+Volume 13 Issue 7, July 1970
+Pages 422-426
+
+the k different hash functions are derived from top (`h1`) and bottom (`h2`) 32-bits of a 64-bit hash function using
+`h_i = h1 + i* h2 mod m for i in 0...m-1`
 
 ## Benchmarks
 ```
