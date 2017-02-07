@@ -65,6 +65,13 @@ func TestBloomFilter(t *testing.T) {
 		t.Errorf("Expected cardinality %d, got %d\n", maxItems, estimatedItems)
 		t.Errorf("Expected error %f, got %f\n", expectedError, actualError)
 	}
+
+	// try to make a really big BloomFilter
+	bf = NewBloomFilter(1<<40, targetFalsePositiveRate, fnv.New64())
+	if bf.m != 1<<32 {
+		t.Errorf("Expected max BloomFilter size to be 2^32, got %d", bf.m)
+	}
+
 }
 
 func TestBloomFilterCombine(t *testing.T) {
