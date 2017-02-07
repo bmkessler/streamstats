@@ -94,7 +94,7 @@ func (lc *LinearCounting) Combine(lcB *LinearCounting) (*LinearCounting, error) 
 	lcB.hash.Write([]byte("LinearCounting"))
 	hashB := lcB.hash.Sum64()
 	if hash != hashB {
-		return nil, fmt.Errorf("Hash functions are not identical, return %d != %d for \"LinearCounting\"", hash, hashB)
+		return nil, fmt.Errorf("Hash functions are not identical, return %0x != %0x for \"LinearCounting\"", hash, hashB)
 	}
 	// determine if either precision needs to be reduced
 	var combinedP byte
@@ -118,4 +118,9 @@ func (lc *LinearCounting) Combine(lcB *LinearCounting) (*LinearCounting, error) 
 		combinedLC.bits[i] = lc1.bits[i] | lc2.bits[i]
 	}
 	return combinedLC, nil
+}
+
+// Occupancy returns the ratio of filled buckets in the LinearCounting bitvector
+func (lc LinearCounting) Occupancy() float64 {
+	return float64(lc.bits.PopCount()) / float64(uint64(1<<lc.p))
 }
