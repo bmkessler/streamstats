@@ -188,7 +188,7 @@ func (hll *HyperLogLog) Combine(hllB *HyperLogLog) (*HyperLogLog, error) {
 	hllB.hash.Write([]byte("HyperLogLog"))
 	hashB := hllB.hash.Sum64()
 	if hash != hashB {
-		return nil, fmt.Errorf("Hash functions are not identical, return %d != %d for \"HyperLogLog\"", hash, hashB)
+		return nil, fmt.Errorf("Hash functions are not identical, return %0x != %0x for \"HyperLogLog\"", hash, hashB)
 	}
 	// determine if either precision needs to be reduced
 	var combinedP byte

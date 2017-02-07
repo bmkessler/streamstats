@@ -114,6 +114,39 @@ func TestHyperLogLogCombine(t *testing.T) {
 	if hllC.Distinct() != hllTotal.Distinct() {
 		t.Errorf("Expected combined %d to equal total %d", hllC.Distinct(), hllTotal.Distinct())
 	}
+
+	// test combine with a reduction
+	hllA = NewHyperLogLog(p, fnv.New64())
+	hllB = NewHyperLogLog(p-3, fnv.New64())
+	hllTotal = NewHyperLogLog(p-3, fnv.New64())
+
+	rand.Seed(42)
+	for i := uint64(0); i < cardinality; i++ {
+		b := make([]byte, 8)
+		rand.Read(b)
+		hllA.Add(b)     // count in A
+		hllTotal.Add(b) // count in Total
+	}
+	for i := uint64(0); i < cardinality; i++ {
+		b := make([]byte, 8)
+		rand.Read(b)
+		hllB.Add(b)     // count in B
+		hllTotal.Add(b) // count in Total
+	}
+	hllC, err = hllA.Combine(hllB) // A + B should equal total
+	if err != nil {
+		t.Error(err)
+	}
+	if hllC.Distinct() != hllTotal.Distinct() {
+		t.Errorf("Expected combined %d to equal total %d", hllC.Distinct(), hllTotal.Distinct())
+	}
+	// Confirm that combining with different hash functions is an error
+	hllB.hash = fnv.New64a()
+	hllC, err = hllA.Combine(hllB) // A + B should equal total
+	if err == nil {
+		t.Errorf("Expected different hash functions to error on Combine")
+	}
+
 }
 
 func BenchmarkHyperLogLogP10Add(b *testing.B) {

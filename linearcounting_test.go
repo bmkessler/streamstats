@@ -10,7 +10,7 @@ import (
 
 func TestLinearCountingPRNG(t *testing.T) {
 	p := byte(13)
-	lc := NewLinearCounting(p, fnv.New64a())
+	lc := NewLinearCounting(p, fnv.New64())
 	cardinality := uint64(1000)
 	rand.Seed(42)
 	for i := uint64(0); i < cardinality; i++ {
@@ -20,11 +20,26 @@ func TestLinearCountingPRNG(t *testing.T) {
 	}
 	m := float64(uint64(1 << p))
 	loadFactor := float64(cardinality) / m
-	expectedError := 2 * math.Sqrt((math.Exp(loadFactor)-loadFactor-1)/m) / loadFactor //0.001 //hll.ExpectedError()
+	expectedError := 2 * math.Sqrt((math.Exp(loadFactor)-loadFactor-1)/m) / loadFactor
 	actualError := math.Abs(float64(lc.Distinct())-float64(cardinality)) / float64(cardinality)
 	if actualError > expectedError {
 		t.Errorf("Expected cardinality %d, got %d\n", cardinality, lc.Distinct())
 		t.Errorf("Expected error %f, got %f\n", expectedError, actualError)
+	}
+
+	// Make a small LinearCounting and fill it completely
+	p = byte(6)
+	lc = NewLinearCounting(p, fnv.New64())
+	for i := uint64(0); i < cardinality; i++ {
+		b := make([]byte, 8)
+		rand.Read(b)
+		lc.Add(b)
+	}
+	if lc.Occupancy() != 1.0 {
+		t.Errorf("Expected LinearCounting to be full, got occupancy %f", lc.Occupancy())
+	}
+	if lc.Distinct() != (1 << p) {
+		t.Errorf("Expected LinearCounting to saturate at %d, got %d", (1 << p), lc.Distinct())
 	}
 }
 
@@ -111,6 +126,14 @@ func TestLinearCountingCombine(t *testing.T) {
 	}
 	if lcC.Distinct() != lcTotal.Distinct() {
 		t.Errorf("Expected combined %d to equal total %d", lcC.Distinct(), lcTotal.Distinct())
+	}
+
+	// check two different hash functions fail
+	lcA = NewLinearCounting(p, fnv.New64())
+	lcB = NewLinearCounting(p, fnv.New64a())
+	// A + B should equal Total
+	if _, err = lcA.Combine(lcB); err == nil {
+		t.Errorf("Expected using two different hash functions to return error")
 	}
 }
 

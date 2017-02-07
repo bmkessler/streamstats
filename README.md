@@ -31,7 +31,9 @@ Quantiles and Histograms are based on the P2-algorithm:
 
 "The P2 algorithm for dynamic calculation of quantiles and histograms without storing observations."
 Raj Jain and Imrich Chlamtac,
-Commun. ACM 28, 10 (October 1985), 1076-1085.
+Communications of the ACM 
+Volume 28 Issue 10, October 1985
+Pages 1076-1085
 
 ## Count Distinct
 
@@ -55,17 +57,27 @@ Approximate set membership is provided by a BloomFilter implementation based on:
 
 "Space/time trade-offs in hash coding with allowable errors"
 Burton H. Bloom
-Communications of the ACM CACM Homepage archive
+Communications of the ACM
 Volume 13 Issue 7, July 1970
 Pages 422-426
 
+the size m of the filter is rounded up to the nearest power of two for speed of addition and membership check, 
+which could result in a larger filter depending on the cardinality and false positive target you supply.
 the k different hash functions are derived from top (`h1`) and bottom (`h2`) 32-bits of a 64-bit hash function using
-`h_i = h1 + i* h2 mod m for i in 0...m-1`
+`h_i = h1 + i* h2 mod m for i in 0...m-1` based on
+
+"Less hashing, same performance: Building a better Bloom filter"
+Adam Kirsch, Michael Mitzenmacher 
+Random Structures & Algorithms
+Volume 33 Issue 2, September 2008
+Pages 187-218 
 
 ## Benchmarks
 ```
 Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz
 go version go1.7.3 linux/amd64
+BenchmarkBloomFilterAdd-4              	20000000	        77.4 ns/op
+BenchmarkBloomFilterCheck-4            	20000000	        70.3 ns/op
 BenchmarkEWMAPush-4                    	200000000	         8.32 ns/op
 BenchmarkHyperLogLogP10Add-4           	30000000	        56.1 ns/op
 BenchmarkHyperLogLogP10Distinct-4      	 1000000	      2050 ns/op
