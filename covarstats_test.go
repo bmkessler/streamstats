@@ -70,4 +70,27 @@ func TestCovarStats(t *testing.T) {
 	if cv.YKurtosis() != yS.Kurtosis() {
 		t.Errorf("Expected YKurtosis %f got %f", yS.Kurtosis(), cv.YKurtosis())
 	}
+
+	// test uncorrelated variables
+	cv = NewCovarStats()
+	cvN := NewCovarStats()
+	for i := 0; i < N; i++ {
+		x := gaussianRandomVariable(x0, xNoise)
+		y := slope*x + intercept                 // pure correlation
+		n := gaussianRandomVariable(0.0, yNoise) // pure noise
+		cv.Add(x, y)
+		cvN.Add(x, n)
+	}
+	if math.Abs(cvN.Correlation()) > acceptableError {
+		t.Errorf("Expected NO Correlation got %f", cv.Correlation())
+	}
+	machinePrecision := 1.0e-15
+	if 1.0-cv.Correlation() > machinePrecision {
+		t.Errorf("Expected 1.0 Correlation got %f", cv.Correlation())
+	}
+	cvC := cv.Combine(cvN) // Combine the pure correlation and the noise to get ~0.5
+	expectedCorrelation := 0.5
+	if math.Abs(cvC.Correlation()-expectedCorrelation) > 2*acceptableError {
+		t.Errorf("Expected %f Correlation got %f", expectedCorrelation, cvC.Correlation())
+	}
 }
