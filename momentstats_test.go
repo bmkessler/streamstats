@@ -25,7 +25,7 @@ func TestGaussianMomentStats(t *testing.T) {
 		eps := 3.0 * stdev / math.Sqrt(float64(N)) // expected error rate <0.3% in the mean
 		m := NewMomentStats()
 		for i := 0; i < N; i++ { // put in 10,000 random normal numbers
-			m.Push(gaussianRandomVariable(mean, stdev))
+			m.Add(gaussianRandomVariable(mean, stdev))
 		}
 		if m.N() != uint64(N) {
 			t.Errorf("Expected N: %v, got %v", N, m.N())
@@ -52,10 +52,10 @@ func TestGaussianMomentStats(t *testing.T) {
 	}
 }
 
-func BenchmarkMomentStatsPush(b *testing.B) {
+func BenchmarkMomentStatsAdd(b *testing.B) {
 	m := NewMomentStats()
 	for i := 0; i < b.N; i++ {
-		m.Push(gaussianTestData[i&mask])
+		m.Add(gaussianTestData[i&mask])
 	}
 	result = m.Mean() // to avoid optimizing out the loop entirely
 }

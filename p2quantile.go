@@ -1,6 +1,6 @@
 package streamstats
 
-// P2Quantile is a thread-safe, O(1) time and space data structure
+// P2Quantile is an O(1) time and space data structure
 // for estimating the p-quantile of a series of N data points based on the
 // "The P2 Algorithm for Dynamic Computing Calculation of Quantiles and
 // Histograms Without Storing Observations" by RAJ JAIN and IIMRICH CHLAMTAC
@@ -23,8 +23,8 @@ func NewP2Quantile(p float64) P2Quantile {
 	}
 }
 
-// Push updates the data structure with a given x value
-func (p *P2Quantile) Push(x float64) {
+// Add updates the data structure with a given x value
+func (p *P2Quantile) Add(x float64) {
 
 	if p.n[4] < 5 {
 		// Initialization:

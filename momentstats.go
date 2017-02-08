@@ -15,12 +15,12 @@ type MomentStats struct {
 }
 
 // NewMomentStats returns an empty MomentStats structure with no values
-func NewMomentStats() MomentStats {
-	return MomentStats{}
+func NewMomentStats() *MomentStats {
+	return &MomentStats{}
 }
 
-// Push updates the moment stats
-func (m *MomentStats) Push(x float64) {
+// Add updates the moment stats
+func (m *MomentStats) Add(x float64) {
 	m.n++
 	fN := float64(m.n) // explicitly cast the number of observations to float64 for arithmetic operations
 	delta := x - m.m1
