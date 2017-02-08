@@ -10,7 +10,7 @@ func TestEWMA(t *testing.T) {
 	if e.Mean() != initialVal {
 		t.Errorf("expected initial value %f, got %f", initialVal, e.Mean())
 	}
-	e.Push(secondVal)
+	e.Add(secondVal)
 	expectedVal := 6.0 // if lambda = 0.5 expect to get the average
 	if e.Mean() != expectedVal {
 		t.Errorf("expected value %f, got %f", expectedVal, e.Mean())
@@ -23,7 +23,7 @@ func TestEWMA(t *testing.T) {
 	if e.Mean() != initialVal {
 		t.Errorf("expected initial value %f, got %f", initialVal, e.Mean())
 	}
-	e.Push(secondVal)
+	e.Add(secondVal)
 	expectedVal = 19.0 // if lambda = 0.9 and small number comes first
 	if e.Mean() != expectedVal {
 		t.Errorf("expected value %f, got %f", expectedVal, e.Mean())
@@ -36,17 +36,17 @@ func TestEWMA(t *testing.T) {
 	if e.Mean() != initialVal {
 		t.Errorf("expected initial value %f, got %f", initialVal, e.Mean())
 	}
-	e.Push(secondVal)
+	e.Add(secondVal)
 	expectedVal = 11.0 // if lambda = 0.9 and small number comes second
 	if e.Mean() != expectedVal {
 		t.Errorf("expected value %f, got %f", expectedVal, e.Mean())
 	}
 }
 
-func BenchmarkEWMAPush(b *testing.B) {
+func BenchmarkEWMAAdd(b *testing.B) {
 	e := NewEWMA(0.0, 0.5)
 	for i := 0; i < b.N; i++ {
-		e.Push(gaussianTestData[i&mask])
+		e.Add(gaussianTestData[i&mask])
 	}
 	result = e.Mean() // to avoid optimizing out the loop entirely
 }

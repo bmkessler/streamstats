@@ -155,7 +155,7 @@ var expectedP2Stats = []expectedP2Stat{
 func TestP2SmallN(t *testing.T) {
 	q := NewP2Quantile(0.5)
 	for _, e := range expectedP2Stats {
-		q.Push(e.x)
+		q.Add(e.x)
 		if q.Quantile() != e.q {
 			t.Errorf("Quantile Expected %v, got %v", e.q, q.Quantile())
 		}
@@ -233,7 +233,7 @@ var dataPointsExpected = []expectedP2{
 func TestP2DataPoints(t *testing.T) {
 	q := NewP2Quantile(0.5)
 	for i, x := range dataPoints {
-		q.Push(x)
+		q.Add(x)
 		for j := 0; j < 5; j++ {
 			// check n
 			if dataPointsExpected[i].n[j] != q.n[j] {
@@ -267,7 +267,7 @@ func TestP2GaussianDist(t *testing.T) {
 		eps := 3.0 * stdev / math.Sqrt(float64(N)) // expected error rate <0.3%
 		q := NewP2Quantile(0.5)                    // test the median
 		for i := 0; i < N; i++ {                   // put in 10,000 random normal numbers
-			q.Push(gaussianRandomVariable(mean, stdev))
+			q.Add(gaussianRandomVariable(mean, stdev))
 		}
 		z25 := 0.6745 // expected deviation at the 25%
 		m := 4.0      // expect at least 4 std deviations for min and max
@@ -307,7 +307,7 @@ func TestP2ExponentialDist(t *testing.T) {
 		for _, p := range ps {
 			q := NewP2Quantile(p)
 			for i := 0; i < N; i++ {
-				q.Push(exponentialRandomVariable(lambda))
+				q.Add(exponentialRandomVariable(lambda))
 			}
 			if math.Abs((exponentialQuantile(p, lambda)-q.Quantile())/exponentialQuantile(p, lambda)) > eps {
 				t.Errorf("Expected %v, got %v", exponentialQuantile(p, lambda), q.Quantile())
@@ -333,7 +333,7 @@ func TestP2UniformDist(t *testing.T) {
 		for _, p := range ps {
 			q := NewP2Quantile(p)
 			for i := 0; i < N; i++ {
-				q.Push(uniformRandomVariable(min, max))
+				q.Add(uniformRandomVariable(min, max))
 			}
 			if math.Abs((uniformQuantile(p, min, max)-q.Quantile())/uniformQuantile(p, min, max)) > eps {
 				t.Errorf("P: %v, min: %v, max: %v, Expected %v, got %v", p, min, max, uniformQuantile(p, min, max), q.Quantile())
@@ -359,7 +359,7 @@ func TestP2CauchyDist(t *testing.T) {
 		for _, p := range ps {
 			q := NewP2Quantile(p)
 			for i := 0; i < N; i++ {
-				q.Push(cauchyRandomVariable(x0, gamma))
+				q.Add(cauchyRandomVariable(x0, gamma))
 			}
 			if math.Abs((cauchyQuantile(p, x0, gamma)-q.Quantile())/cauchyQuantile(p, x0, gamma)) > eps {
 				t.Errorf("P: %v, x0: %v, gamma: %v, Expected %v, got %v", p, x0, gamma, cauchyQuantile(p, x0, gamma), q.Quantile())
@@ -368,10 +368,10 @@ func TestP2CauchyDist(t *testing.T) {
 	}
 }
 
-func BenchmarkP2QuantilePush(b *testing.B) {
+func BenchmarkP2QuantileAdd(b *testing.B) {
 	q := NewP2Quantile(0.5)
 	for i := 0; i < b.N; i++ {
-		q.Push(gaussianTestData[i&mask])
+		q.Add(gaussianTestData[i&mask])
 	}
 	result = q.Quantile() // to avoid optimizing out the loop entirely
 }

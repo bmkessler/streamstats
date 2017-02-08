@@ -14,8 +14,8 @@ func NewEWMA(initialValue float64, lambda float64) EWMA {
 	}
 }
 
-// Push updates the average value with the stored weight
-func (e *EWMA) Push(x float64) {
+// Add updates the average value with the stored weight
+func (e *EWMA) Add(x float64) {
 	e.m = (1-e.lambda)*e.m + e.lambda*x
 }
 

@@ -7,11 +7,16 @@ type CovarStats struct {
 	sXY    float64
 }
 
-// Push adds a sample of the two variables to the CovarStats data structure
-func (c *CovarStats) Push(x, y float64) {
+// NewCovarStats returns an empty CovarStats structure with no values
+func NewCovarStats() *CovarStats {
+	return &CovarStats{}
+}
+
+// Add adds a sample of the two variables to the CovarStats data structure
+func (c *CovarStats) Add(x, y float64) {
 	c.sXY += (c.xStats.Mean() - x) * (c.yStats.Mean() - y) * float64(c.xStats.n) / float64(c.xStats.n+1)
-	c.xStats.Push(x)
-	c.yStats.Push(y)
+	c.xStats.Add(x)
+	c.yStats.Add(y)
 }
 
 // Slope returns the slope of the correlation between x and y samples seen so far

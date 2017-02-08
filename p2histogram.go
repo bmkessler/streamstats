@@ -1,6 +1,6 @@
 package streamstats
 
-// P2Histogram is a thread-safe, O(1) time and space data structure
+// P2Histogram is an O(1) time and space data structure
 // for estimating the evenly spaced histogram bins of a series of N data points based on the
 // "The P2 Algorithm for Dynamic Computing Calculation of Quantiles and
 // Histograms Without Storing Observations" by RAJ JAIN and IIMRICH CHLAMTAC
@@ -25,8 +25,8 @@ func NewP2Histogram(b int) P2Histogram {
 	}
 }
 
-// Push updates the data structure with a given x value
-func (h *P2Histogram) Push(x float64) {
+// Add updates the data structure with a given x value
+func (h *P2Histogram) Add(x float64) {
 
 	if h.n[h.b] < uint64(h.b)+1 {
 		// Initialization:
@@ -48,7 +48,7 @@ func (h *P2Histogram) Push(x float64) {
 			k = 0
 		} else if h.q[h.b] < x {
 			h.q[h.b] = x // new maximum
-			k = uint64(h.b) - 2
+			k = uint64(h.b) - 1
 		} else { // check which bin the measurement falls into
 			for i := 1; i <= h.b; i++ {
 				if x < h.q[i] {
@@ -63,7 +63,7 @@ func (h *P2Histogram) Push(x float64) {
 		}
 		// adjust heights of internal markers if necessary
 		for i := 1; i < h.b; i++ {
-			np := 1.0 + float64(i)*(float64(h.n[i])-1.0)/float64(h.b)
+			np := 1.0 + float64(i)*(float64(h.n[h.b])-1.0)/float64(h.b)
 			d := np - float64(h.n[i]) // the difference from the target
 			if (d >= 1.0 && h.n[i]+1 < h.n[i+1]) || (d <= -1.0 && h.n[i-1]+1 < h.n[i]) {
 				// delta is always snapped to +/- 1
@@ -96,7 +96,7 @@ func (h *P2Histogram) Push(x float64) {
 // N returns the number of observations seen so far
 func (h *P2Histogram) N() uint64 {
 
-	return h.n[h.b+1]
+	return h.n[h.b]
 }
 
 // CumulativeDensity represents the probability P of observing a value less than or equal to X

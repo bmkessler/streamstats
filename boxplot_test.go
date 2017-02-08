@@ -15,8 +15,8 @@ func TestBoxPlot(t *testing.T) {
 	q := NewP2Quantile(p)
 	// add the same data to both and compare
 	for i := 0; i < N; i++ {
-		q.Push(exponentialTestData[i])
-		bp.Push(exponentialTestData[i])
+		q.Add(exponentialTestData[i])
+		bp.Add(exponentialTestData[i])
 	}
 	if bp.Median() != q.Quantile() {
 		t.Errorf("Expected Median %v, got %v", q.Quantile(), bp.Median())
@@ -59,11 +59,11 @@ func TestBoxPlot(t *testing.T) {
 	}
 
 	bp = NewBoxPlot()
-	bp.Push(0.0)
-	bp.Push(1.0)
-	bp.Push(2.0)
-	bp.Push(3.0)
-	bp.Push(4.0)
+	bp.Add(0.0)
+	bp.Add(1.0)
+	bp.Add(2.0)
+	bp.Add(3.0)
+	bp.Add(4.0)
 	expectedString := fmt.Sprintf("Min: %0.3f LowerQuartile: %0.3f Median: %0.3f UpperQuartile: %0.3f Max: %0.3f N: %d", 0.0, 1.0, 2.0, 3.0, 4.0, 5)
 	if expectedString != bp.String() {
 		t.Errorf("Expected %s got %s", expectedString, bp)
