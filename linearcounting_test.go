@@ -2,6 +2,7 @@ package streamstats
 
 import (
 	"encoding/binary"
+	"fmt"
 	"hash/fnv"
 	"math"
 	"math/rand"
@@ -18,13 +19,17 @@ func TestLinearCountingPRNG(t *testing.T) {
 		rand.Read(b)
 		lc.Add(b)
 	}
-	m := float64(uint64(1 << p))
-	loadFactor := float64(cardinality) / m
-	expectedError := 2 * math.Sqrt((math.Exp(loadFactor)-loadFactor-1)/m) / loadFactor
+	N := lc.Distinct()
+	expectedError := lc.ExpectedError()
+	delta := uint64(float64(N) * expectedError)
 	actualError := math.Abs(float64(lc.Distinct())-float64(cardinality)) / float64(cardinality)
 	if actualError > expectedError {
 		t.Errorf("Expected cardinality %d, got %d\n", cardinality, lc.Distinct())
 		t.Errorf("Expected error %f, got %f\n", expectedError, actualError)
+	}
+	expectedString := fmt.Sprintf("LinearCounting N: %d +/- %d", N, delta)
+	if lc.String() != expectedString {
+		t.Errorf("Expected string %s got %s", expectedString, lc)
 	}
 
 	// Make a small LinearCounting and fill it completely
@@ -70,7 +75,7 @@ func TestLinearCountingVsHyperLogLog(t *testing.T) {
 	}
 }
 
-func TestLinearCountingReducePrecision(t *testing.T) {
+func TestLinearCountingCompress(t *testing.T) {
 	// Expect to get exactly the same answer after folding
 	p := byte(8)
 	lc := NewLinearCounting(p, fnv.New64())
@@ -81,10 +86,8 @@ func TestLinearCountingReducePrecision(t *testing.T) {
 		lc.bits.Set(128 + i + 2)
 		lc.bits.Set(196 + i + 3)
 	}
-	lcRed, err := lc.ReducePrecision(byte(6))
-	if err != nil {
-		t.Error(err)
-	}
+	lcRed := lc.Compress(byte(2))
+
 	if lc.bits.PopCount() != lcRed.bits.PopCount() {
 		t.Errorf("PopCount: %d Reduced PopCount: %d", lc.bits.PopCount(), lcRed.bits.PopCount())
 	}
@@ -93,28 +96,20 @@ func TestLinearCountingReducePrecision(t *testing.T) {
 	for i := uint64(0); i < (1 << p); i += 4 {
 		lc.bits.Set(i)
 	}
-	lcRed, err = lc.ReducePrecision(byte(7))
-	if err != nil {
-		t.Error(err)
-	}
+	lcRed = lc.Compress(byte(1))
 	if lc.bits.PopCount() != lcRed.bits.PopCount()*2 {
 		t.Errorf("PopCount: %d Reduced PopCount: %d", lc.bits.PopCount(), lcRed.bits.PopCount())
 	}
-	lcRed, err = lc.ReducePrecision(byte(6))
-	if err != nil {
-		t.Error(err)
-	}
+	lcRed = lc.Compress(byte(2))
+
 	if lc.bits.PopCount() != lcRed.bits.PopCount()*4 {
 		t.Errorf("PopCount: %d Reduced PopCount: %d", lc.bits.PopCount(), lcRed.bits.PopCount())
 	}
 	// test reduce precision bounds
-	lcRed, err = lc.ReducePrecision(minLinearCountingP - 1)
-	if err == nil {
-		t.Errorf("Expected error when trying to reduce below the minimum precision")
-	}
-	lcRed, err = lc.ReducePrecision(p + 1)
-	if err == nil {
-		t.Errorf("Expected error when trying to reduce above the starting precision")
+
+	lcRed = lc.Compress(p + 1)
+	if lcRed.p != minLinearCountingP {
+		t.Errorf("Expected minimum reduction size of %d got %d", minLinearCountingP, lc.p)
 	}
 }
 
@@ -123,55 +118,91 @@ func TestLinearCountingCombine(t *testing.T) {
 	p := byte(12)
 	lcA := NewLinearCounting(p, fnv.New64())
 	lcB := NewLinearCounting(p, fnv.New64())
-	lcTotal := NewLinearCounting(p, fnv.New64())
+	lcUnion := NewLinearCounting(p, fnv.New64())
+	lcIntersect := NewLinearCounting(p, fnv.New64())
 
-	cardinality := uint64(500)
+	cardinality := uint64(300)
 	rand.Seed(42)
 	for i := uint64(0); i < cardinality; i++ {
 		b := make([]byte, 8)
 		rand.Read(b)
 		lcA.Add(b)     // count in A
-		lcTotal.Add(b) // count in Total
+		lcUnion.Add(b) // count in Union
+	}
+	for i := uint64(0); i < cardinality; i++ {
+		b := make([]byte, 8)
+		rand.Read(b)
+		lcA.Add(b)         // count in A
+		lcB.Add(b)         // count in B
+		lcUnion.Add(b)     // count in Union
+		lcIntersect.Add(b) // count in Intersect
 	}
 	for i := uint64(0); i < cardinality; i++ {
 		b := make([]byte, 8)
 		rand.Read(b)
 		lcB.Add(b)     // count in B
-		lcTotal.Add(b) // count in Total
+		lcUnion.Add(b) // count in Union
 	}
-	lcC, err := lcA.Combine(lcB) // A + B should equal Total
+	lcC, err := lcA.Union(lcB) // A | B should equal Union
 	if err != nil {
 		t.Error(err)
 	}
-	if lcC.Distinct() != lcTotal.Distinct() {
-		t.Errorf("Expected combined %d to equal total %d", lcC.Distinct(), lcTotal.Distinct())
+	if lcC.Distinct() != lcUnion.Distinct() {
+		t.Errorf("Expected combined %d to equal union %d", lcC.Distinct(), lcUnion.Distinct())
+	}
+	lcC, err = lcA.Intersect(lcB) // A & B should equal Intersect
+	if err != nil {
+		t.Error(err)
+	}
+	if lcC.Distinct() < lcIntersect.Distinct() {
+		t.Errorf("Expected intersect %d to be greater than intersect %d", lcC.Distinct(), lcIntersect.Distinct())
+	}
+	// Test compressed intersection
+	lcb := lcB.Compress(3)
+	intersectAb, err := lcA.Intersect(lcb)
+	if err != nil {
+		t.Error(err)
+	}
+	intersectbA, err := lcb.Intersect(lcA)
+	if err != nil {
+		t.Error(err)
+	}
+	if intersectAb.Distinct() != intersectbA.Distinct() {
+		t.Errorf("Expected A&b == b&A got %d != %d", intersectAb.Distinct(), intersectbA.Distinct())
+	}
+	lcc := lcC.Compress(3)
+	if err != nil {
+		t.Error(err)
+	}
+	if intersectAb.Distinct() < lcc.Distinct() {
+		t.Errorf("Expected intersect %d to be greater than intersect %d", intersectAb.Distinct(), lcc.Distinct())
 	}
 
 	// test combine with a reduction
 	lcA = NewLinearCounting(p, fnv.New64())
 	lcB = NewLinearCounting(p-3, fnv.New64())
-	lcTotal = NewLinearCounting(p-3, fnv.New64())
+	lcUnion = NewLinearCounting(p-3, fnv.New64())
 
-	cardinality = uint64(500)
 	rand.Seed(42)
 	for i := uint64(0); i < cardinality/2; i++ {
 		b := make([]byte, 8)
 		rand.Read(b)
 		lcA.Add(b)     // count in A
-		lcTotal.Add(b) // count in Total
+		lcUnion.Add(b) // count in Union
 	}
 	for i := uint64(0); i < cardinality/2; i++ {
 		b := make([]byte, 8)
 		rand.Read(b)
 		lcB.Add(b)     // count in B
-		lcTotal.Add(b) // count in Total
+		lcUnion.Add(b) // count in Union
 	}
-	lcC, err = lcA.Combine(lcB) // A + B should equal Total
+
+	lcC, err = lcA.Union(lcB) // A | B should equal Union
 	if err != nil {
 		t.Error(err)
 	}
 	// test combine in opposite order
-	lcD, err := lcB.Combine(lcA) // B + A should equal Total
+	lcD, err := lcB.Union(lcA) // B & A should equal Union
 	if err != nil {
 		t.Error(err)
 	}
@@ -182,6 +213,7 @@ func TestLinearCountingCombine(t *testing.T) {
 	m := float64(uint64(1 << (p - 3))) // reduced p
 	loadFactor := float64(cardinality) / m
 	expectedError := 2 * math.Sqrt((math.Exp(loadFactor)-loadFactor-1)/m) / loadFactor
+	//expectedError := lcC.ExpectedError()
 	actualError := math.Abs(float64(lcC.Distinct())-float64(cardinality)) / float64(cardinality)
 	if actualError > expectedError {
 		t.Errorf("Expected cardinality %d, got %d\n", cardinality, lcC.Distinct())
@@ -191,8 +223,11 @@ func TestLinearCountingCombine(t *testing.T) {
 	// check two different hash functions fail
 	lcA = NewLinearCounting(p, fnv.New64())
 	lcB = NewLinearCounting(p, fnv.New64a())
-	// A + B should equal Total
-	if _, err = lcA.Combine(lcB); err == nil {
+	// A + B should equal Union
+	if _, err = lcA.Union(lcB); err == nil {
+		t.Errorf("Expected using two different hash functions to return error")
+	}
+	if _, err = lcA.Intersect(lcB); err == nil {
 		t.Errorf("Expected using two different hash functions to return error")
 	}
 }

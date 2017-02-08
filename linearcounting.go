@@ -51,14 +51,15 @@ func (lc LinearCounting) Distinct() uint64 {
 	return (1 << lc.p)
 }
 
-// ReducePrecision produces a new HyperLogLog with reduced precision
-// if p>hll.p it returns nil and an error, if p==hll.p it just produces a copy
-func (lc *LinearCounting) ReducePrecision(p byte) (*LinearCounting, error) {
-
-	if p > lc.p {
-		return nil, fmt.Errorf("Precision %d is greater than the current LinearCounting precision %d", p, lc.p)
-	} else if p < minLinearCountingP {
-		return nil, fmt.Errorf("Precision %d is less than the minimum LinearCounting precision %d", p, minLinearCountingP)
+// Compress produces a new LinearCouting with reduced size by 2^factor with reduced precision
+// if new p < minLinearCountingP, p=minLinearCountingP , if factor=0 it just produces a copy
+func (lc *LinearCounting) Compress(factor byte) *LinearCounting {
+	var p byte
+	if lc.p > factor {
+		p = lc.p - factor
+	}
+	if p < minLinearCountingP {
+		p = minLinearCountingP
 	}
 	newLC := NewLinearCounting(p, lc.hash)
 
@@ -79,12 +80,12 @@ func (lc *LinearCounting) ReducePrecision(p byte) (*LinearCounting, error) {
 		newLC.bits[i] = bitsToFold[i]
 	}
 
-	return newLC, nil
+	return newLC
 }
 
-// Combine the estimate of two LinearCounting reducing the precision to the minimum of the two sets
+// Union the estimate of two LinearCounting reducing the precision to the minimum of the two sets
 // the function will return nil and an error if the hash functions mismatch
-func (lc *LinearCounting) Combine(lcB *LinearCounting) (*LinearCounting, error) {
+func (lc *LinearCounting) Union(lcB *LinearCounting) (*LinearCounting, error) {
 
 	// check that both hash functions get the same result for "LinearCounting"
 	lc.hash.Reset()
@@ -101,11 +102,13 @@ func (lc *LinearCounting) Combine(lcB *LinearCounting) (*LinearCounting, error) 
 	var lc1, lc2, combinedLC *LinearCounting
 	if lc.p < lcB.p {
 		combinedP = lc.p
+		factor := lcB.p - combinedP
 		lc1 = lc
-		lc2, _ = lcB.ReducePrecision(lc.p)
+		lc2 = lcB.Compress(factor)
 	} else if lcB.p < lc.p {
 		combinedP = lcB.p
-		lc1, _ = lc.ReducePrecision(lcB.p)
+		factor := lc.p - combinedP
+		lc1 = lc.Compress(factor)
 		lc2 = lcB
 	} else {
 		combinedP = lc.p
@@ -120,7 +123,60 @@ func (lc *LinearCounting) Combine(lcB *LinearCounting) (*LinearCounting, error) 
 	return combinedLC, nil
 }
 
+// Intersect the estimate of two LinearCounting reducing the precision to the minimum of the two sets
+// the function will return nil and an error if the hash functions mismatch
+func (lc *LinearCounting) Intersect(lcB *LinearCounting) (*LinearCounting, error) {
+
+	// check that both hash functions get the same result for "LinearCounting"
+	lc.hash.Reset()
+	lc.hash.Write([]byte("LinearCounting"))
+	hash := lc.hash.Sum64()
+	lcB.hash.Reset()
+	lcB.hash.Write([]byte("LinearCounting"))
+	hashB := lcB.hash.Sum64()
+	if hash != hashB {
+		return nil, fmt.Errorf("Hash functions are not identical, return %0x != %0x for \"LinearCounting\"", hash, hashB)
+	}
+	// determine if either precision needs to be reduced
+	var combinedP byte
+	var lc1, lc2, combinedLC *LinearCounting
+	if lc.p < lcB.p {
+		combinedP = lc.p
+		factor := lcB.p - combinedP
+		lc1 = lc
+		lc2 = lcB.Compress(factor)
+	} else if lcB.p < lc.p {
+		combinedP = lcB.p
+		factor := lc.p - combinedP
+		lc1 = lc.Compress(factor)
+		lc2 = lcB
+	} else {
+		combinedP = lc.p
+		lc1 = lc
+		lc2 = lcB
+	}
+	// for each bucket take the AND of the two LinearCounting
+	combinedLC = NewLinearCounting(combinedP, lc.hash)
+	for i := range combinedLC.bits {
+		combinedLC.bits[i] = lc1.bits[i] & lc2.bits[i]
+	}
+	return combinedLC, nil
+}
+
 // Occupancy returns the ratio of filled buckets in the LinearCounting bitvector
 func (lc LinearCounting) Occupancy() float64 {
 	return float64(lc.bits.PopCount()) / float64(uint64(1<<lc.p))
+}
+
+// ExpectedError returns the expected error at the current filling in the LinearCounting
+func (lc LinearCounting) ExpectedError() float64 {
+	m := float64(uint64(1 << lc.p))
+	loadFactor := lc.Occupancy()
+	return 2 * math.Sqrt((math.Exp(loadFactor)-loadFactor-1)/m) / loadFactor
+}
+
+func (lc LinearCounting) String() string {
+	N := lc.Distinct()
+	delta := uint64(float64(N) * lc.ExpectedError())
+	return fmt.Sprintf("LinearCounting N: %d +/- %d", N, delta)
 }
