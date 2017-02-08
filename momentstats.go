@@ -102,5 +102,5 @@ func (m *MomentStats) Combine(b *MomentStats) MomentStats {
 
 // String returns the standard string representation of the samples seen so far
 func (m *MomentStats) String() string {
-	return fmt.Sprintf("Mean: %f Variance: %f Skewness: %f Kurtosis: %f N: %d", m.Mean(), m.Variance(), m.Skewness(), m.Kurtosis(), m.N())
+	return fmt.Sprintf("Mean: %0.3f Variance: %0.3f Skewness: %0.3f Kurtosis: %0.3f N: %d", m.Mean(), m.Variance(), m.Skewness(), m.Kurtosis(), m.N())
 }
