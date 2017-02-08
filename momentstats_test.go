@@ -8,6 +8,18 @@ import (
 )
 
 func TestGaussianMomentStats(t *testing.T) {
+	m := NewMomentStats()
+	m.Add(1.0)
+	if m.Variance() != 0.0 {
+		t.Errorf("Expected zero Variance with only one point added got %f", m.Variance())
+	}
+	if m.Skewness() != 0.0 {
+		t.Errorf("Expected zero Skewness with only one point added got %f", m.Skewness())
+	}
+	if m.Kurtosis() != 0.0 {
+		t.Errorf("Expected zero Kurtosis with only one point added got %f", m.Kurtosis())
+	}
+
 	rand.Seed(42) // for deterministic testing
 	N := 100000
 	// mean/stdev pairs for testing
@@ -23,7 +35,7 @@ func TestGaussianMomentStats(t *testing.T) {
 		skew := 0.0
 		kurt := 0.0
 		eps := 3.0 * stdev / math.Sqrt(float64(N)) // expected error rate <0.3% in the mean
-		m := NewMomentStats()
+		m = NewMomentStats()
 		for i := 0; i < N; i++ { // put in 10,000 random normal numbers
 			m.Add(gaussianRandomVariable(mean, stdev))
 		}
@@ -49,6 +61,35 @@ func TestGaussianMomentStats(t *testing.T) {
 		if m.String() != expectedString {
 			t.Errorf("Expected %s got %s", expectedString, m)
 		}
+	}
+	// combine two measurements
+	N = 1000
+	meanA := 1.5
+	meanB := -0.5
+	meanC := (meanA + meanB) / 2.0
+	stdevA := 2.0
+	stdevB := 3.0
+	stdevC := math.Sqrt(stdevA*stdevA + stdevB*stdevB)
+	mA := NewMomentStats()
+	mB := NewMomentStats()
+	mTotal := NewMomentStats()
+	for i := 0; i < N; i++ { // put in N random normal numbers
+		x := meanA + stdevA*gaussianTestData[i]
+		mA.Add(x)
+		mTotal.Add(x)
+	}
+	for i := N; i < 2*N; i++ { // put in N random normal numbers
+		x := meanB + stdevB*gaussianTestData[i]
+		mB.Add(x)
+		mTotal.Add(x)
+	}
+	mC := mA.Combine(mB)
+	eps := 3.0 * stdevC / math.Sqrt(float64(N)) // expected error rate <0.3% in the mean
+	if math.Abs(mC.Mean()-meanC) > eps {
+		t.Errorf("Expected Combined Mean == %v, got %v", meanC, mC.Mean())
+	}
+	if math.Abs(mC.StdDev()-mTotal.StdDev()) > eps {
+		t.Errorf("Expected Combined StdDev == %v, got %v", mTotal.StdDev(), mC.StdDev())
 	}
 }
 
