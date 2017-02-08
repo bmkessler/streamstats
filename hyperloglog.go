@@ -139,28 +139,26 @@ func (hll *HyperLogLog) BiasCorrected() uint64 {
 
 // ExpectedError returns the estimated error in the number of distinct items in the multiset
 func (hll *HyperLogLog) ExpectedError() float64 {
-
 	m := float64(uint64(1 << hll.p))
 	return 1.04 / math.Sqrt(m)
-
 }
 
 // Reset zeros out the estimated number of distinct items in the multiset
 func (hll *HyperLogLog) Reset() {
-
 	for i := range hll.data {
 		hll.data[i] = 0
 	}
 }
 
-// ReducePrecision produces a new HyperLogLog with reduced precision
-// if p>hll.p it returns nil and an error, if p==hll.p it just produces a copy
-func (hll *HyperLogLog) ReducePrecision(p byte) (*HyperLogLog, error) {
-
-	if p > hll.p {
-		return nil, fmt.Errorf("Precision %d is greater than the current HyperLogLog precision %d", p, hll.p)
-	} else if p < 4 {
-		return nil, fmt.Errorf("Precision %d is less than the mimimum HyperLogLog precision %d", p, minimumHyperLogLogP)
+// Compress produces a new HyperLogLog with reduced size by 2^factor with reduced precision
+// if new p < minimumHyperLogLogP, p=minimumHyperLogLogP , if factor=0 it just produces a copy
+func (hll *HyperLogLog) Compress(factor byte) *HyperLogLog {
+	var p byte
+	if hll.p > factor {
+		p = hll.p - factor
+	}
+	if p < minimumHyperLogLogP {
+		p = minimumHyperLogLogP
 	}
 	newHLL := NewHyperLogLog(p, hll.hash)
 	// populate new hll by taking max over the stride length
@@ -173,12 +171,12 @@ func (hll *HyperLogLog) ReducePrecision(p byte) (*HyperLogLog, error) {
 			}
 		}
 	}
-	return newHLL, nil
+	return newHLL
 }
 
-// Combine the estimate of two HyperLogLog reducing the precision to the minimum of the two sets
+// Union the estimate of two HyperLogLog reducing the precision to the minimum of the two sets
 // the function will return nil and an error if the hash functions mismatch
-func (hll *HyperLogLog) Combine(hllB *HyperLogLog) (*HyperLogLog, error) {
+func (hll *HyperLogLog) Union(hllB *HyperLogLog) (*HyperLogLog, error) {
 
 	// check that both hash functions get the same result for "HyperLogLog"
 	hll.hash.Reset()
@@ -195,11 +193,13 @@ func (hll *HyperLogLog) Combine(hllB *HyperLogLog) (*HyperLogLog, error) {
 	var hll1, hll2, combinedHLL *HyperLogLog
 	if hll.p < hllB.p {
 		combinedP = hll.p
+		factor := hllB.p - combinedP
 		hll1 = hll
-		hll2, _ = hllB.ReducePrecision(hll.p)
+		hll2 = hllB.Compress(factor)
 	} else if hllB.p < hll.p {
 		combinedP = hllB.p
-		hll1, _ = hll.ReducePrecision(hllB.p)
+		factor := hll.p - combinedP
+		hll1 = hll.Compress(factor)
 		hll2 = hllB
 	} else {
 		combinedP = hll.p
@@ -216,6 +216,57 @@ func (hll *HyperLogLog) Combine(hllB *HyperLogLog) (*HyperLogLog, error) {
 		}
 	}
 	return combinedHLL, nil
+}
+
+// Intersect the estimate of two HyperLogLog reducing the precision to the minimum of the two sets
+// the function will return nil and an error if the hash functions mismatch
+// Intersect will always overestimate the size of the intersection
+func (hll *HyperLogLog) Intersect(hllB *HyperLogLog) (*HyperLogLog, error) {
+
+	// check that both hash functions get the same result for "HyperLogLog"
+	hll.hash.Reset()
+	hll.hash.Write([]byte("HyperLogLog"))
+	hash := hll.hash.Sum64()
+	hllB.hash.Reset()
+	hllB.hash.Write([]byte("HyperLogLog"))
+	hashB := hllB.hash.Sum64()
+	if hash != hashB {
+		return nil, fmt.Errorf("Hash functions are not identical, return %0x != %0x for \"HyperLogLog\"", hash, hashB)
+	}
+	// determine if either precision needs to be reduced
+	var combinedP byte
+	var hll1, hll2, combinedHLL *HyperLogLog
+	if hll.p < hllB.p {
+		combinedP = hll.p
+		factor := hllB.p - combinedP
+		hll1 = hll
+		hll2 = hllB.Compress(factor)
+	} else if hllB.p < hll.p {
+		combinedP = hllB.p
+		factor := hll.p - combinedP
+		hll1 = hll.Compress(factor)
+		hll2 = hllB
+	} else {
+		combinedP = hll.p
+		hll1 = hll
+		hll2 = hllB
+	}
+	// for each bucket take the min value from the two Hyperloglog
+	combinedHLL = NewHyperLogLog(combinedP, hll.hash)
+	for i := range combinedHLL.data {
+		if hll1.data[i] > hll2.data[i] {
+			combinedHLL.data[i] = hll2.data[i]
+		} else {
+			combinedHLL.data[i] = hll1.data[i]
+		}
+	}
+	return combinedHLL, nil
+}
+
+func (hll *HyperLogLog) String() string {
+	N := hll.Distinct()
+	delta := uint64(float64(N) * hll.ExpectedError())
+	return fmt.Sprintf("HyperLogLog N: %d +/- %d", N, delta)
 }
 
 var inversePowersOfTwo = [...]float64{
