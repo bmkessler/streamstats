@@ -1,5 +1,7 @@
 package streamstats
 
+import "fmt"
+
 // BoxPlot represents a BoxPlot with interquartile range and whiskers backed by a P2-Quantile tracking the median, P=0.5
 type BoxPlot struct {
 	P2Quantile
@@ -58,4 +60,8 @@ func (bp BoxPlot) MidRange() float64 {
 // TriMean returns the TriMean of the data, average of Median and MidHinge
 func (bp BoxPlot) TriMean() float64 {
 	return (bp.UpperQuartile() + 2.0*bp.Median() + bp.LowerQuartile()) / 4.0
+}
+
+func (bp BoxPlot) String() string {
+	return fmt.Sprintf("Min: %0.3f LowerQuartile: %0.3f Median: %0.3f UpperQuartile: %0.3f Max: %0.3f N: %d", bp.Min(), bp.LowerQuartile(), bp.Median(), bp.UpperQuartile(), bp.Max(), bp.N())
 }

@@ -1,6 +1,7 @@
 package streamstats
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"testing"
@@ -43,6 +44,10 @@ func TestGaussianMomentStats(t *testing.T) {
 		}
 		if math.Abs(m.Kurtosis()-kurt) > 2*eps {
 			t.Errorf("Expected Kurtosis == %v, got %v", kurt, m.Kurtosis())
+		}
+		expectedString := fmt.Sprintf("Mean: %0.3f Variance: %0.3f Skewness: %0.3f Kurtosis: %0.3f N: %d", m.Mean(), m.Variance(), m.Skewness(), m.Kurtosis(), m.N())
+		if m.String() != expectedString {
+			t.Errorf("Expected %s got %s", expectedString, m)
 		}
 	}
 }
