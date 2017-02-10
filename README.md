@@ -64,7 +64,7 @@ Pages 422-426
 the size m of the filter is rounded up to the nearest power of two for speed of addition and membership check, 
 which could result in a larger filter depending on the cardinality and false positive target you supply.
 the k different hash functions are derived from top (`h1`) and bottom (`h2`) 32-bits of a 64-bit hash function using
-`h_i = h1 + i* h2 mod m for i in 0...m-1` based on
+`h[i] = h1 + i* h2 mod m for i in 0...m-1` based on
 
 "Less hashing, same performance: Building a better Bloom filter"
 Adam Kirsch, Michael Mitzenmacher 
@@ -76,18 +76,18 @@ Pages 187-218
 ```
 Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz
 go version go1.7.3 linux/amd64
-BenchmarkBloomFilterAdd-4              	20000000	        77.4 ns/op
-BenchmarkBloomFilterCheck-4            	20000000	        70.3 ns/op
-BenchmarkEWMAPush-4                    	200000000	         8.32 ns/op
-BenchmarkHyperLogLogP10Add-4           	30000000	        56.1 ns/op
-BenchmarkHyperLogLogP10Distinct-4      	 1000000	      2050 ns/op
-BenchmarkLinearCountingP10Add-4        	50000000	        35.4 ns/op
-BenchmarkLinearCountingP10Distinct-4   	10000000	       180 ns/op
-BenchmarkMomentStatsPush-4             	100000000	        19.7 ns/op
-BenchmarkP2Histogram8Push-4            	20000000	       109 ns/op
-BenchmarkP2Histogram16Push-4           	 5000000	       257 ns/op
-BenchmarkP2Histogram32Push-4           	 3000000	       521 ns/op
-BenchmarkP2Histogram64Push-4           	 1000000	      1108 ns/op
-BenchmarkP2Histogram128Push-4          	 1000000	      2167 ns/op
-BenchmarkP2QuantilePush-4              	20000000	        66.9 ns/op
+BenchmarkBloomFilterAdd-4              	20000000	        75.5 ns/op
+BenchmarkBloomFilterCheck-4            	20000000	        70.0 ns/op
+BenchmarkEWMAAdd-4                     	200000000	         8.28 ns/op
+BenchmarkHyperLogLogP10Add-4           	30000000	        56.3 ns/op
+BenchmarkHyperLogLogP10Distinct-4      	 1000000	      2178 ns/op
+BenchmarkLinearCountingP10Add-4        	50000000	        36.1 ns/op
+BenchmarkLinearCountingP10Distinct-4   	10000000	       175 ns/op
+BenchmarkMomentStatsAdd-4              	100000000	        19.7 ns/op
+BenchmarkP2Histogram8Add-4             	10000000	       165 ns/op
+BenchmarkP2Histogram16Add-4            	 5000000	       349 ns/op
+BenchmarkP2Histogram32Add-4            	 2000000	       702 ns/op
+BenchmarkP2Histogram64Add-4            	 1000000	      1365 ns/op
+BenchmarkP2Histogram128Add-4           	  500000	      2673 ns/op
+BenchmarkP2QuantileAdd-4               	20000000	        66.4 ns/op
 ```
